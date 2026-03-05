@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 
-const Navbar = () => {
+const Navbar = ({ theme = "dark", onToggleTheme }) => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -8,6 +8,8 @@ const Navbar = () => {
     localStorage.removeItem("token");
     navigate("/login");
   };
+
+  const isDark = theme === "dark";
 
   return (
     <nav className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur">
@@ -25,7 +27,19 @@ const Navbar = () => {
             </span>
           </div>
         </Link>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-3 text-sm">
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            className="flex items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-900/60 px-3 py-1 text-[11px] font-medium text-slate-200 hover:bg-slate-800"
+          >
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-800 text-[9px]">
+              {isDark ? "☾" : "☀"}
+            </span>
+            <span className="hidden sm:inline">
+              {isDark ? "Dark" : "Light"} mode
+            </span>
+          </button>
           {token ? (
             <>
               <Link

@@ -43,10 +43,17 @@ const Login = () => {
               college deadlines
             </span>
           </h1>
-          <p className="mb-6 text-sm text-slate-400">
+          <p className="mb-4 text-sm text-slate-400">
             Skillstreet helps students swap skills and finish projects on time,
             even when classes, clubs, and part-time work pile up.
           </p>
+          <div className="mb-6 max-w-md rounded-2xl bg-slate-900/80 p-4 text-sm text-slate-200 ring-1 ring-slate-700/70">
+            <p className="italic">
+              &quot;You don&apos;t have to do every assignment alone. The
+              smartest students know when to ask for help.&quot;
+            </p>
+            <p className="mt-2 text-xs text-slate-400">— Skillstreet for Students</p>
+          </div>
           <div className="flex flex-wrap gap-4 text-xs text-slate-300">
             <div className="rounded-2xl bg-slate-900/80 px-4 py-3 ring-1 ring-slate-800">
               <p className="text-[11px] uppercase tracking-wide text-slate-400">

@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
+:root[data-theme="dark"] body {
   @apply bg-slate-950 text-slate-100 antialiased;
   background-image:
     radial-gradient(circle at top left, rgba(79, 70, 229, 0.25), transparent 55%),
@@ -10,14 +10,40 @@ body {
   background-attachment: fixed;
 }
 
+:root[data-theme="light"] body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+  background-image:
+    radial-gradient(circle at top left, rgba(191, 219, 254, 0.8), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(224, 231, 255, 0.9), transparent 55%);
+  background-attachment: fixed;
+}
+
 a {
   @apply text-primary-500 hover:text-primary-600;
+}
+
+:root[data-theme="light"] a {
+  @apply text-primary-600 hover:text-primary-700;
+}
+
+:root[data-theme="dark"] nav {
+  @apply bg-slate-950/80 border-slate-800/80 text-slate-100;
+}
+
+:root[data-theme="light"] nav {
+  @apply bg-white/80 border-slate-200 text-slate-900;
 }
 
 input,
 textarea,
 select {
   @apply w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] textarea,
+:root[data-theme="light"] select {
+  @apply bg-white border-slate-300 text-slate-900;
 }
 
 input::placeholder,
@@ -28,4 +54,39 @@ textarea::placeholder {
 button {
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
+
+/* Light mode overrides for dark utility classes so text/cards stay readable */
+:root[data-theme="light"] .bg-slate-950,
+:root[data-theme="light"] .bg-slate-900 {
+  @apply bg-white;
+}
+
+:root[data-theme="light"] .bg-slate-900\/80,
+:root[data-theme="light"] .bg-slate-900\/90,
+:root[data-theme="light"] .bg-slate-950\/80,
+:root[data-theme="light"] .bg-slate-950\/90 {
+  @apply bg-white/90;
+}
+
+:root[data-theme="light"] .border-slate-800,
+:root[data-theme="light"] .border-slate-800\/80,
+:root[data-theme="light"] .border-slate-700 {
+  @apply border-slate-200;
+}
+
+:root[data-theme="light"] .text-white,
+:root[data-theme="light"] .text-slate-50,
+:root[data-theme="light"] .text-slate-100,
+:root[data-theme="light"] .text-slate-200 {
+  @apply text-slate-900;
+}
+
+:root[data-theme="light"] .text-slate-300 {
+  @apply text-slate-700;
+}
+
+:root[data-theme="light"] .text-slate-400 {
+  @apply text-slate-600;
+}
+
 
