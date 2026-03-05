@@ -4,6 +4,10 @@
 
 body {
   @apply bg-slate-950 text-slate-100 antialiased;
+  background-image:
+    radial-gradient(circle at top left, rgba(79, 70, 229, 0.25), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(8, 47, 73, 0.6), transparent 55%);
+  background-attachment: fixed;
 }
 
 a {
@@ -13,7 +17,12 @@ a {
 input,
 textarea,
 select {
-  @apply bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  @apply w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+}
+
+input::placeholder,
+textarea::placeholder {
+  @apply text-slate-500;
 }
 
 button {

@@ -9,8 +9,8 @@ from .routes import tasks as task_routes
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="TaskConnect API",
-    description="API for the TaskConnect task-sharing platform.",
+    title="Skillstreet API",
+    description="API for the Skillstreet task-sharing platform.",
     version="1.0.0",
 )
 
@@ -37,5 +37,5 @@ app.include_router(task_routes.router, prefix="/api/tasks", tags=["tasks"])
 
 @app.get("/api/health")
 def read_health():
-    return {"status": "ok", "service": "TaskConnect API"}
+    return {"status": "ok", "service": "Skillstreet API"}
 

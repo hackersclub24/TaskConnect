@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { acceptTask, fetchTaskById } from "../services/api";
+import {
+  acceptTask,
+  deleteTask,
+  fetchCurrentUser,
+  fetchTaskById,
+  fetchTaskContacts,
+  updateTask,
+  updateTaskStatus
+} from "../services/api";
 
 const TaskDetails = () => {
   const { id } = useParams();
@@ -11,6 +19,20 @@ const TaskDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [accepting, setAccepting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    deadline: "",
+    reward: ""
+  });
+  const [contacts, setContacts] = useState({
+    owner_phone: null,
+    acceptor_phone: null
+  });
 
   useEffect(() => {
     if (!token) {
@@ -19,8 +41,23 @@ const TaskDetails = () => {
     }
     const load = async () => {
       try {
-        const { data } = await fetchTaskById(id);
-        setTask(data);
+        const [{ data: taskData }, { data: userData }, { data: contactsData }] =
+          await Promise.all([
+            fetchTaskById(id),
+            fetchCurrentUser(),
+            fetchTaskContacts(id)
+          ]);
+        setTask(taskData);
+        setCurrentUserId(userData.id);
+        setContacts(contactsData);
+        setEditForm({
+          title: taskData.title,
+          description: taskData.description,
+          deadline: taskData.deadline
+            ? new Date(taskData.deadline).toISOString().slice(0, 16)
+            : "",
+          reward: taskData.reward != null ? String(taskData.reward) : ""
+        });
       } catch {
         setError("Failed to load task.");
       } finally {
@@ -45,6 +82,72 @@ const TaskDetails = () => {
     }
   };
 
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveEdits = async (e) => {
+    e.preventDefault();
+    if (!task) return;
+    setSaving(true);
+    setError("");
+    try {
+      const payload = {
+        title: editForm.title,
+        description: editForm.description,
+        deadline: editForm.deadline || null,
+        reward: editForm.reward === "" ? null : Number(editForm.reward)
+      };
+      const { data } = await updateTask(id, payload);
+      setTask(data);
+      setEditing(false);
+    } catch (err) {
+      setError(
+        err.response?.data?.detail || "Could not update this task right now."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleStatusChange = async (nextStatus) => {
+    if (!task || task.status === nextStatus) return;
+    setSaving(true);
+    setError("");
+    try {
+      const { data } = await updateTaskStatus(id, nextStatus);
+      setTask(data);
+    } catch (err) {
+      setError(
+        err.response?.data?.detail ||
+          "Could not update the status of this task right now."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!task) return;
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this task? This cannot be undone."
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError("");
+    try {
+      await deleteTask(id);
+      navigate("/");
+    } catch (err) {
+      setError(
+        err.response?.data?.detail || "Could not delete this task right now."
+      );
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-6 text-sm text-slate-400">
@@ -61,11 +164,14 @@ const TaskDetails = () => {
     );
   }
 
+  const isOwner = currentUserId != null && task.owner_id === currentUserId;
+
   const deadline = task.deadline
     ? new Date(task.deadline).toLocaleString()
     : "No deadline";
 
   const canAccept = task.status === "open";
+  const acceptedCount = task.status === "accepted" ? 1 : 0;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
@@ -85,7 +191,7 @@ const TaskDetails = () => {
           </span>
         </div>
         <p className="mb-4 text-sm text-slate-300">{task.description}</p>
-        <div className="mb-4 grid gap-3 text-xs text-slate-400 md:grid-cols-3">
+        <div className="mb-4 grid gap-3 text-xs text-slate-400 md:grid-cols-4">
           <div>
             <p className="text-slate-500">Deadline</p>
             <p>{deadline}</p>
@@ -102,25 +208,151 @@ const TaskDetails = () => {
             <p className="text-slate-500">Assigned to</p>
             <p>{task.assigned_to ? `User #${task.assigned_to}` : "Unassigned"}</p>
           </div>
+          <div>
+            <p className="text-slate-500">Accepted by</p>
+            <p>
+              {acceptedCount}{" "}
+              {acceptedCount === 1 ? "freelancer" : "freelancers"}
+            </p>
+          </div>
+          <div className="md:col-span-2">
+            <p className="text-slate-500">Task poster contact</p>
+            <p>{contacts.owner_phone || "Not provided"}</p>
+          </div>
         </div>
         {error && (
           <div className="mb-4 rounded border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
             {error}
           </div>
         )}
-        <div className="mt-2 flex gap-3">
-          <button
-            onClick={handleAccept}
-            disabled={!canAccept || accepting}
-            className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-primary-900/60 hover:bg-primary-500"
-          >
-            {canAccept
-              ? accepting
-                ? "Accepting..."
-                : "Accept task"
-              : "Not available"}
-          </button>
+        <div className="mt-2 flex flex-wrap gap-3">
+          {!isOwner && (
+            <button
+              onClick={handleAccept}
+              disabled={!canAccept || accepting}
+              className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-primary-900/60 hover:bg-primary-500"
+            >
+              {canAccept
+                ? accepting
+                  ? "Accepting..."
+                  : "Accept task"
+                : "Not available"}
+            </button>
+          )}
+
+          {isOwner && (
+            <>
+              <button
+                onClick={() => setEditing((prev) => !prev)}
+                className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+              >
+                {editing ? "Cancel edit" : "Edit task"}
+              </button>
+              {task.status !== "completed" && (
+                <button
+                  onClick={() => handleStatusChange("completed")}
+                  disabled={saving}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-emerald-900/60 hover:bg-emerald-500"
+                >
+                  {saving && !editing ? "Updating..." : "Mark as completed"}
+                </button>
+              )}
+              {task.status === "completed" && (
+                <button
+                  onClick={() => handleStatusChange("open")}
+                  disabled={saving}
+                  className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-sky-900/60 hover:bg-sky-500"
+                >
+                  {saving && !editing ? "Updating..." : "Reopen task"}
+                </button>
+              )}
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded-lg border border-red-500/60 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-500/20"
+              >
+                {deleting ? "Deleting..." : "Delete task"}
+              </button>
+              <div className="mt-4 w-full rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3 text-xs text-slate-300">
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  Accepted freelancer contact (only you can see this)
+                </p>
+                <p>
+                  {contacts.acceptor_phone
+                    ? contacts.acceptor_phone
+                    : task.assigned_to
+                    ? "The acceptor has not added a phone number yet."
+                    : "No one has accepted this task yet."}
+                </p>
+              </div>
+            </>
+          )}
         </div>
+
+        {isOwner && editing && (
+          <form onSubmit={handleSaveEdits} className="mt-6 space-y-4 border-t border-slate-800 pt-4">
+            <h2 className="text-sm font-semibold text-slate-100">
+              Edit your task
+            </h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-slate-300">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={editForm.title}
+                  onChange={handleEditChange}
+                  required
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-slate-300">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  rows={3}
+                  value={editForm.description}
+                  onChange={handleEditChange}
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-300">
+                  Deadline
+                </label>
+                <input
+                  type="datetime-local"
+                  name="deadline"
+                  value={editForm.deadline}
+                  onChange={handleEditChange}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-300">
+                  Reward (₹)
+                </label>
+                <input
+                  type="number"
+                  name="reward"
+                  min="0"
+                  step="0.01"
+                  value={editForm.reward}
+                  onChange={handleEditChange}
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-primary-900/60 hover:bg-primary-500"
+            >
+              {saving ? "Saving changes..." : "Save changes"}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { registerUser } from "../services/api";
 
 const Register = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", phone: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -32,13 +32,14 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl shadow-black/40">
+    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-900/90 p-6 shadow-xl shadow-black/50">
         <h1 className="mb-2 text-center text-2xl font-semibold text-slate-50">
-          Create your account
+          Join the Skillstreet campus
         </h1>
         <p className="mb-6 text-center text-sm text-slate-400">
-          Join TaskConnect and start sharing tasks.
+          Team up with other students to handle projects, assignments, and side
+          gigs before the deadline hits.
         </p>
         {error && (
           <div className="mb-4 rounded border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
@@ -62,6 +63,18 @@ const Register = () => {
               onChange={handleChange}
               required
               placeholder="you@example.com"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-300">
+              Phone (optional)
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="Your WhatsApp or mobile number"
             />
           </div>
           <div>

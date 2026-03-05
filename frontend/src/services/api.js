@@ -19,13 +19,26 @@ export const registerUser = (data) => api.post("/auth/register", data);
 
 export const loginUser = (data) => api.post("/auth/login", data);
 
+export const fetchCurrentUser = () => api.get("/auth/me");
+
 export const fetchTasks = () => api.get("/tasks/");
+
+export const fetchMyTasks = () => api.get("/tasks/mine");
 
 export const fetchTaskById = (id) => api.get(`/tasks/${id}`);
 
 export const createTask = (data) => api.post("/tasks/", data);
 
 export const acceptTask = (id) => api.post(`/tasks/${id}/accept`);
+
+export const updateTask = (id, data) => api.patch(`/tasks/${id}`, data);
+
+export const updateTaskStatus = (id, status) =>
+  api.patch(`/tasks/${id}/status`, { status });
+
+export const deleteTask = (id) => api.delete(`/tasks/${id}`);
+
+export const fetchTaskContacts = (id) => api.get(`/tasks/${id}/contacts`);
 
 export default api;
 

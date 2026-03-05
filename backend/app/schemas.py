@@ -12,6 +12,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    phone: Optional[str] = None
 
 
 class UserLogin(BaseModel):
@@ -21,6 +22,7 @@ class UserLogin(BaseModel):
 
 class UserOut(UserBase):
     id: int
+    phone: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -37,6 +39,13 @@ class TaskCreate(TaskBase):
     pass
 
 
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    deadline: Optional[datetime] = None
+    reward: Optional[float] = None
+
+
 class TaskUpdateStatus(BaseModel):
     status: TaskStatus
 
@@ -50,6 +59,11 @@ class TaskOut(TaskBase):
 
     class Config:
         orm_mode = True
+
+
+class TaskContacts(BaseModel):
+    owner_phone: Optional[str] = None
+    acceptor_phone: Optional[str] = None
 
 
 class Token(BaseModel):

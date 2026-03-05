@@ -1,6 +1,6 @@
-## TaskConnect
+## Skillstreet
 
-TaskConnect is a full‑stack task‑sharing platform. Users can register, log in, create tasks they need help with, browse tasks, and accept tasks created by others.
+Skillstreet is a full‑stack task‑sharing platform. Users can register, log in, create tasks they need help with, browse tasks, and accept tasks created by others.
 
 Backend is built with **FastAPI + PostgreSQL + SQLAlchemy + JWT**, and frontend is built with **React (Vite) + Tailwind CSS + React Router + Axios**.
 
@@ -154,5 +154,5 @@ Authorization: Bearer <access_token>
    - `npm run dev`  
    - Open `http://localhost:5173`
 
-You now have **TaskConnect** running locally with backend and frontend operating independently but connected via the REST API.
+You now have **Skillstreet** running locally with backend and frontend operating independently but connected via the REST API.
 

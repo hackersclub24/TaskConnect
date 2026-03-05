@@ -19,7 +19,7 @@ def authenticate_user(db: Session, email: str, password: str):
     return user
 
 
-def create_user(db: Session, email: str, password: str):
+def create_user(db: Session, email: str, password: str, phone: str | None = None):
     print("RAW PASSWORD:", password)
     print("LENGTH:", len(password))
     existing = db.query(models.User).filter(models.User.email == email).first()
@@ -29,7 +29,7 @@ def create_user(db: Session, email: str, password: str):
             detail="Email already registered",
         )
     hashed_password = get_password_hash(password)
-    user = models.User(email=email, hashed_password=hashed_password)
+    user = models.User(email=email, hashed_password=hashed_password, phone=phone)
     db.add(user)
     db.commit()
     db.refresh(user)
