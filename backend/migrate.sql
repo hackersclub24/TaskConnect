@@ -25,7 +25,16 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Contact feedback table
+-- 5. Chat messages table
+CREATE TABLE IF NOT EXISTS messages (
+  id SERIAL PRIMARY KEY,
+  task_id INTEGER NOT NULL REFERENCES tasks(id),
+  sender_id INTEGER NOT NULL REFERENCES users(id),
+  message TEXT NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. Contact feedback table
 CREATE TABLE IF NOT EXISTS contact_feedback (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id),

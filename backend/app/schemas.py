@@ -140,6 +140,24 @@ class ReviewWithReviewer(ReviewOut):
 
 
 # --- Contact/Feedback schemas ---
+# --- Chat/Message schemas ---
+class MessageOut(BaseModel):
+    id: int
+    task_id: int
+    sender_id: int
+    sender_email: Optional[str] = None
+    message: str
+    timestamp: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class MessageCreate(BaseModel):
+    message: str
+
+
+# --- Contact/Feedback schemas ---
 class ContactFeedbackCreate(BaseModel):
     type: str  # "feedback", "report", "contact"
     subject: str

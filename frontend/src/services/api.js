@@ -58,5 +58,18 @@ export const fetchUserReviews = (userId) => api.get(`/reviews/user/${userId}`);
 // Contact / Feedback
 export const submitContactFeedback = (data) => api.post("/contact/", data);
 
+// Chat messages (REST for history)
+// WebSocket URL: derive from API base (http://localhost:8000/api -> ws://localhost:8000)
+const getWsBase = () => {
+  const env = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  const base = env.replace(/\/api\/?$/, "").replace(/^http/, "ws");
+  return base || "ws://localhost:8000";
+};
+export const getChatWebSocketUrl = (taskId) => {
+  const token = localStorage.getItem("token");
+  return `${getWsBase()}/ws/chat/${taskId}?token=${token || ""}`;
+};
+export const fetchTaskMessages = (taskId) => api.get(`/tasks/${taskId}/messages`);
+
 export default api;
 

@@ -24,6 +24,7 @@ import {
   updateTask,
   updateTaskStatus
 } from "../services/api";
+import TaskChat from "../components/TaskChat";
 
 const categoryConfig = {
   paid: { label: "Paid", icon: IndianRupee },
@@ -230,6 +231,7 @@ const TaskDetails = () => {
 
   const isOwner = currentUser && task.owner_id === currentUser.id;
   const isAcceptor = currentUser && task.assigned_to === currentUser.id;
+  const canAccessChat = isOwner || isAcceptor;
   const canLeaveReview =
     task.status === "completed" &&
     currentUser &&
@@ -404,6 +406,17 @@ const TaskDetails = () => {
             </>
           )}
         </div>
+
+        {/* Real-time task chat - only for owner and assigned user */}
+        {canAccessChat && (
+          <div className="mt-6">
+            <TaskChat
+              taskId={parseInt(id, 10)}
+              currentUserId={currentUser?.id}
+              canAccess={canAccessChat}
+            />
+          </div>
+        )}
 
         {/* Leave Review (when task completed) */}
         {canLeaveReview && revieweeId && (

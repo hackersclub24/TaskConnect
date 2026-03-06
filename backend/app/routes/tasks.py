@@ -85,6 +85,44 @@ def get_task_contacts(
     return schemas.TaskContacts(owner_phone=owner_phone, acceptor_phone=acceptor_phone)
 
 
+@router.get("/{task_id}/messages", response_model=List[schemas.MessageOut])
+def get_task_messages(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Get chat messages for a task. Only owner or assigned user can access."""
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    if current_user.id != task.owner_id and current_user.id != task.assigned_to:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the task creator and assigned user can access this chat",
+        )
+    messages = (
+        db.query(models.Message)
+        .filter(models.Message.task_id == task_id)
+        .order_by(models.Message.timestamp.asc())
+        .all()
+    )
+    # Load sender emails
+    result = []
+    for m in messages:
+        sender = db.query(models.User).filter(models.User.id == m.sender_id).first()
+        result.append(
+            schemas.MessageOut(
+                id=m.id,
+                task_id=m.task_id,
+                sender_id=m.sender_id,
+                sender_email=sender.email if sender else None,
+                message=m.message,
+                timestamp=m.timestamp,
+            )
+        )
+    return result
+
+
 @router.get(
     "/{task_id}/recommended-freelancers",
     response_model=list[schemas.RecommendedFreelancerOut],

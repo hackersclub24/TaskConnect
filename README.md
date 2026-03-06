@@ -64,6 +64,15 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS college_name VARCHAR(255);
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'paid';
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS inter_college_only BOOLEAN DEFAULT FALSE;
 
+-- Added for chat messages
+CREATE TABLE IF NOT EXISTS messages (
+  id SERIAL PRIMARY KEY,
+  task_id INTEGER NOT NULL REFERENCES tasks(id),
+  sender_id INTEGER NOT NULL REFERENCES users(id),
+  message TEXT NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Added for reviews and contact feedback
 CREATE TABLE IF NOT EXISTS reviews (
   id SERIAL PRIMARY KEY,
@@ -171,6 +180,7 @@ Authorization: Bearer <access_token>
 
 ### 5. New Features (Hackathon Demo)
 
+- **Real-time Chat**: Each task has its own chat room. Only task creator and assigned user can access. WebSocket at `ws://localhost:8000/ws/chat/{task_id}`.
 - **Inter-College Work**: Users set college during signup. Tasks can be marked "Inter-College Only". Filter tasks by "From my college".
 - **Task Categories**: Paid Tasks, Learning Help, Collaboration Projects – filter via tabs on Dashboard.
 - **Reviews**: Star rating (1–5) + text. Leave reviews on completed tasks. View reviews on user profiles (`/profile/:userId`).

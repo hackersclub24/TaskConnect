@@ -94,9 +94,9 @@ const Profile = () => {
           {reviews.map((r) => (
             <div
               key={r.id}
-              className="rounded-xl border border-slate-800/80 bg-slate-900/70 p-4"
+              className="rounded-xl border border-slate-800/80 bg-slate-900/70 p-4 shadow-sm"
             >
-              <div className="mb-2 flex items-center justify-between">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <Star
@@ -106,9 +106,12 @@ const Profile = () => {
                       }`}
                     />
                   ))}
+                  <span className="ml-1 text-sm font-medium text-slate-300">
+                    {r.rating}/5
+                  </span>
                 </div>
-                <span className="text-xs text-slate-500">
-                  {r.reviewer_email || `User #${r.reviewer_id}`}
+                <span className="text-sm font-medium text-slate-400">
+                  Reviewed by {r.reviewer_email || `User #${r.reviewer_id}`}
                 </span>
               </div>
               {r.text && (

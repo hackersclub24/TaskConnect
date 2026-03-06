@@ -84,6 +84,21 @@ class Task(Base):
         back_populates="assigned_tasks",
         foreign_keys=[assigned_to],
     )
+    messages = relationship("Message", back_populates="task", order_by="Message.timestamp")
+
+
+class Message(Base):
+    """Chat messages for task-specific rooms. Only owner and assigned user can access."""
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    message = Column(Text, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    task = relationship("Task", back_populates="messages")
+    sender = relationship("User", foreign_keys=[sender_id])
 
 
 class Review(Base):
