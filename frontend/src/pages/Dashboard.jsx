@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchTasks } from "../services/api";
+import { fetchCurrentUser, fetchRecommendedTasks, fetchTasks } from "../services/api";
 import TaskCard from "../components/TaskCard";
 
 const Dashboard = () => {
@@ -9,6 +9,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [recommended, setRecommended] = useState([]);
+  const [recLoading, setRecLoading] = useState(true);
 
   const token = localStorage.getItem("token");
 
@@ -19,8 +21,19 @@ const Dashboard = () => {
     }
     const load = async () => {
       try {
-        const { data } = await fetchTasks();
-        setTasks(data);
+        const [{ data: tasksData }, { data: meData }] = await Promise.all([
+          fetchTasks(),
+          fetchCurrentUser()
+        ]);
+        setTasks(tasksData);
+        try {
+          const { data: recData } = await fetchRecommendedTasks(meData.id);
+          setRecommended(recData || []);
+        } catch {
+          setRecommended([]);
+        } finally {
+          setRecLoading(false);
+        }
       } catch (err) {
         setError("Failed to load tasks.");
       } finally {
@@ -49,6 +62,32 @@ const Dashboard = () => {
           + Post a new task
         </button>
       </div>
+
+      {!recLoading && recommended.length > 0 && (
+        <div className="mb-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-50">
+                Recommended for you
+              </h2>
+              <p className="text-xs text-slate-400">
+                Based on your skills profile
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {recommended.slice(0, 5).map((rec) => (
+              <div key={rec.task.id} className="relative">
+                <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-primary-600/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary-300 ring-1 ring-primary-500/30">
+                  {rec.match_percentage}% match
+                </div>
+                <TaskCard task={rec.task} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2">
           <button

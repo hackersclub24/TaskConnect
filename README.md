@@ -41,6 +41,19 @@ cd backend
 copy .env.template .env   # (Windows PowerShell: Copy-Item .env.template .env)
 ```
 
+#### 2.1.1. Database migrations (important)
+
+This project uses `Base.metadata.create_all(...)`, which **does not** add new columns to existing tables.
+If you pull new changes that add columns, run the SQL below once in your Postgres DB.
+
+```sql
+-- Added for contact sharing
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(255);
+
+-- Added for AI matching / recommendations
+ALTER TABLE users ADD COLUMN IF NOT EXISTS skills TEXT;
+```
+
 Edit `.env`:
 
 - **DATABASE_URL** – PostgreSQL connection string, e.g.  

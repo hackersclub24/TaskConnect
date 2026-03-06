@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..services.matching import match_percentage
+from ..services.proposals import ProposalContext, generate_proposal
 
 
 router = APIRouter()
@@ -58,6 +60,57 @@ def get_task_contacts(
         acceptor_phone = task.assigned_user.phone
 
     return schemas.TaskContacts(owner_phone=owner_phone, acceptor_phone=acceptor_phone)
+
+
+@router.get(
+    "/{task_id}/recommended-freelancers",
+    response_model=list[schemas.RecommendedFreelancerOut],
+)
+def recommended_freelancers(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    task_text = f"{task.title}\n{task.description}"
+
+    # For demo: treat all users except task owner as potential freelancers.
+    users = db.query(models.User).filter(models.User.id != task.owner_id).all()
+    scored: list[tuple[int, models.User]] = []
+    for user in users:
+        skills = user.skills or ""
+        pct = match_percentage(task_text, skills)
+        scored.append((pct, user))
+
+    top = sorted(scored, key=lambda x: x[0], reverse=True)[:5]
+    return [
+        {
+            "freelancer": {"id": u.id, "email": u.email, "skills": u.skills},
+            "match_percentage": pct,
+        }
+        for pct, u in top
+    ]
+
+
+@router.post("/{task_id}/proposal", response_model=schemas.ProposalOut)
+def generate_task_proposal(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    ctx = ProposalContext(
+        task_title=task.title,
+        task_description=task.description,
+        freelancer_skills=current_user.skills or "",
+    )
+    return {"proposal": generate_proposal(ctx)}
 
 
 @router.post("/", response_model=schemas.TaskOut, status_code=status.HTTP_201_CREATED)

@@ -4,7 +4,12 @@ import { registerUser } from "../services/api";
 
 const Register = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "", phone: "" });
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    phone: "",
+    skills: ""
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -75,6 +80,18 @@ const Register = () => {
               value={form.phone}
               onChange={handleChange}
               placeholder="Your WhatsApp or mobile number"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-300">
+              Skills (comma separated)
+            </label>
+            <input
+              type="text"
+              name="skills"
+              value={form.skills}
+              onChange={handleChange}
+              placeholder="React, Tailwind, Python, UI design"
             />
           </div>
           <div>

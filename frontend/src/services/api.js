@@ -40,5 +40,13 @@ export const deleteTask = (id) => api.delete(`/tasks/${id}`);
 
 export const fetchTaskContacts = (id) => api.get(`/tasks/${id}/contacts`);
 
+export const fetchRecommendedFreelancers = (id) =>
+  api.get(`/tasks/${id}/recommended-freelancers`);
+
+export const generateProposal = (id) => api.post(`/tasks/${id}/proposal`);
+
+export const fetchRecommendedTasks = (userId) =>
+  api.get(`/users/${userId}/recommended-tasks`);
+
 export default api;
 

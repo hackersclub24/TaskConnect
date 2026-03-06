@@ -16,6 +16,7 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
         email=user_in.email,
         password=user_in.password,
         phone=user_in.phone,
+        skills=user_in.skills,
     )
     return user
 

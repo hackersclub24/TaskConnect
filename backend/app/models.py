@@ -28,6 +28,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     phone = Column(String, nullable=True)
+    skills = Column(String, nullable=True)
 
     owned_tasks = relationship(
         "Task",
