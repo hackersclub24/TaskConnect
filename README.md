@@ -23,8 +23,8 @@ Backend is built with **FastAPI + PostgreSQL + SQLAlchemy + JWT**, and frontend 
 - **frontend** – React SPA
   - `src/main.jsx` – React root with `BrowserRouter`
   - `src/App.jsx` – routes + `PrivateRoute` wrapper
-  - `src/pages/*.jsx` – `Login`, `Register`, `Dashboard`, `CreateTask`, `TaskDetails`
-  - `src/components/*.jsx` – `Navbar`, `TaskCard`
+  - `src/pages/*.jsx` – `Login`, `Register`, `Dashboard`, `CreateTask`, `TaskDetails`, `Contact`, `Profile`
+  - `src/components/*.jsx` – `Navbar`, `TaskCard` (with icons via lucide-react)
   - `src/services/api.js` – Axios instance and API helpers
   - `tailwind.config.js`, `postcss.config.js`, `src/index.css` – Tailwind (dark UI)
 
@@ -44,7 +44,13 @@ copy .env.template .env   # (Windows PowerShell: Copy-Item .env.template .env)
 #### 2.1.1. Database migrations (important)
 
 This project uses `Base.metadata.create_all(...)`, which **does not** add new columns to existing tables.
-If you pull new changes that add columns, run the SQL below once in your Postgres DB.
+If you have an **existing database**, run the migration script:
+
+```bash
+psql -U postgres -d taskconnect -f backend/migrate.sql
+```
+
+Or run the SQL below manually in your Postgres DB.
 
 ```sql
 -- Added for contact sharing
@@ -52,6 +58,30 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(255);
 
 -- Added for AI matching / recommendations
 ALTER TABLE users ADD COLUMN IF NOT EXISTS skills TEXT;
+
+-- Added for inter-college work feature
+ALTER TABLE users ADD COLUMN IF NOT EXISTS college_name VARCHAR(255);
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'paid';
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS inter_college_only BOOLEAN DEFAULT FALSE;
+
+-- Added for reviews and contact feedback
+CREATE TABLE IF NOT EXISTS reviews (
+  id SERIAL PRIMARY KEY,
+  reviewer_id INTEGER NOT NULL REFERENCES users(id),
+  reviewee_id INTEGER NOT NULL REFERENCES users(id),
+  task_id INTEGER REFERENCES tasks(id),
+  rating INTEGER NOT NULL,
+  text TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS contact_feedback (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  type VARCHAR(50) NOT NULL,
+  subject VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 Edit `.env`:
@@ -139,7 +169,14 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 5. Frontend Behavior
+### 5. New Features (Hackathon Demo)
+
+- **Inter-College Work**: Users set college during signup. Tasks can be marked "Inter-College Only". Filter tasks by "From my college".
+- **Task Categories**: Paid Tasks, Learning Help, Collaboration Projects – filter via tabs on Dashboard.
+- **Reviews**: Star rating (1–5) + text. Leave reviews on completed tasks. View reviews on user profiles (`/profile/:userId`).
+- **Contact/Feedback**: Submit feedback, report issues, or contact the team at `/contact`.
+
+### 6. Frontend Behavior
 
 - **JWT storage**: Login stores `access_token` in `localStorage` under key `token`.
 - **Protected routes**: `Dashboard`, `CreateTask`, `TaskDetails` are wrapped in `PrivateRoute` and redirect to `/login` when not authenticated.
@@ -152,7 +189,7 @@ Authorization: Bearer <access_token>
 
 ---
 
-### 6. Running Everything Together
+### 7. Running Everything Together
 
 1. **Start PostgreSQL** and ensure your database (e.g. `taskconnect`) exists.
 2. **Backend**  

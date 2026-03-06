@@ -6,6 +6,8 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import CreateTask from "./pages/CreateTask";
 import TaskDetails from "./pages/TaskDetails";
+import Contact from "./pages/Contact";
+import Profile from "./pages/Profile";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -47,6 +49,8 @@ const App = () => {
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/profile/:userId" element={<Profile />} />
           <Route
             path="/create-task"
             element={

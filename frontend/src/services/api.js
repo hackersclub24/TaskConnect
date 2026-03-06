@@ -21,7 +21,8 @@ export const loginUser = (data) => api.post("/auth/login", data);
 
 export const fetchCurrentUser = () => api.get("/auth/me");
 
-export const fetchTasks = () => api.get("/tasks/");
+// Tasks - category: paid|learning|collaboration, same_college_only: bool
+export const fetchTasks = (params = {}) => api.get("/tasks/", { params });
 
 export const fetchMyTasks = () => api.get("/tasks/mine");
 
@@ -47,6 +48,15 @@ export const generateProposal = (id) => api.post(`/tasks/${id}/proposal`);
 
 export const fetchRecommendedTasks = (userId) =>
   api.get(`/users/${userId}/recommended-tasks`);
+
+export const fetchUserById = (userId) => api.get(`/users/${userId}`);
+
+// Reviews
+export const createReview = (data) => api.post("/reviews/", data);
+export const fetchUserReviews = (userId) => api.get(`/reviews/user/${userId}`);
+
+// Contact / Feedback
+export const submitContactFeedback = (data) => api.post("/contact/", data);
 
 export default api;
 

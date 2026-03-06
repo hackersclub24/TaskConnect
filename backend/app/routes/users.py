@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
 from ..auth import get_current_user
@@ -29,6 +29,7 @@ def recommended_tasks(
     skills = user.skills or ""
     tasks = (
         db.query(models.Task)
+        .options(joinedload(models.Task.owner))
         .filter(models.Task.status == models.TaskStatus.open)
         .order_by(models.Task.created_at.desc())
         .all()
@@ -42,4 +43,13 @@ def recommended_tasks(
 
     top = sorted(scored, key=lambda x: x[0], reverse=True)[:5]
     return [{"task": t, "match_percentage": pct} for pct, t in top]
+
+
+@router.get("/{user_id}", response_model=schemas.UserOut)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    """Get public user profile (for viewing reviews, etc.)."""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user
 

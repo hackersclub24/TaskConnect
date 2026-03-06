@@ -1,7 +1,20 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import {
+  ArrowLeft,
+  Calendar,
+  IndianRupee,
+  Building2,
+  BookOpen,
+  Users,
+  User,
+  Star,
+  Copy,
+  Sparkles
+} from "lucide-react";
 import {
   acceptTask,
+  createReview,
   deleteTask,
   fetchCurrentUser,
   fetchTaskById,
@@ -11,6 +24,12 @@ import {
   updateTask,
   updateTaskStatus
 } from "../services/api";
+
+const categoryConfig = {
+  paid: { label: "Paid", icon: IndianRupee },
+  learning: { label: "Learning", icon: BookOpen },
+  collaboration: { label: "Collaboration", icon: Users }
+};
 
 const TaskDetails = () => {
   const { id } = useParams();
@@ -23,13 +42,15 @@ const TaskDetails = () => {
   const [accepting, setAccepting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
     deadline: "",
-    reward: ""
+    reward: "",
+    category: "paid",
+    inter_college_only: false
   });
   const [contacts, setContacts] = useState({
     owner_phone: null,
@@ -39,6 +60,9 @@ const TaskDetails = () => {
   const [recLoading, setRecLoading] = useState(true);
   const [proposal, setProposal] = useState("");
   const [proposalLoading, setProposalLoading] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, text: "" });
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -59,7 +83,7 @@ const TaskDetails = () => {
           fetchRecommendedFreelancers(id)
         ]);
         setTask(taskData);
-        setCurrentUserId(userData.id);
+        setCurrentUser(userData);
         setContacts(contactsData);
         setRecommendedFreelancers(recData || []);
         setEditForm({
@@ -68,7 +92,9 @@ const TaskDetails = () => {
           deadline: taskData.deadline
             ? new Date(taskData.deadline).toISOString().slice(0, 16)
             : "",
-          reward: taskData.reward != null ? String(taskData.reward) : ""
+          reward: taskData.reward != null ? String(taskData.reward) : "",
+          category: taskData.category || "paid",
+          inter_college_only: taskData.inter_college_only || false
         });
       } catch {
         setError("Failed to load task.");
@@ -87,17 +113,18 @@ const TaskDetails = () => {
       const { data } = await acceptTask(id);
       setTask(data);
     } catch (err) {
-      setError(
-        err.response?.data?.detail || "Could not accept this task right now."
-      );
+      setError(err.response?.data?.detail || "Could not accept this task right now.");
     } finally {
       setAccepting(false);
     }
   };
 
   const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    setEditForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? e.target.checked : value
+    }));
   };
 
   const handleSaveEdits = async (e) => {
@@ -110,15 +137,15 @@ const TaskDetails = () => {
         title: editForm.title,
         description: editForm.description,
         deadline: editForm.deadline || null,
-        reward: editForm.reward === "" ? null : Number(editForm.reward)
+        reward: editForm.reward === "" ? null : Number(editForm.reward),
+        category: editForm.category,
+        inter_college_only: editForm.inter_college_only
       };
       const { data } = await updateTask(id, payload);
       setTask(data);
       setEditing(false);
     } catch (err) {
-      setError(
-        err.response?.data?.detail || "Could not update this task right now."
-      );
+      setError(err.response?.data?.detail || "Could not update this task right now.");
     } finally {
       setSaving(false);
     }
@@ -132,10 +159,7 @@ const TaskDetails = () => {
       const { data } = await updateTaskStatus(id, nextStatus);
       setTask(data);
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-          "Could not update the status of this task right now."
-      );
+      setError(err.response?.data?.detail || "Could not update the status of this task right now.");
     } finally {
       setSaving(false);
     }
@@ -143,20 +167,15 @@ const TaskDetails = () => {
 
   const handleDelete = async () => {
     if (!task) return;
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this task? This cannot be undone."
-    );
+    const confirmed = window.confirm("Are you sure you want to delete this task? This cannot be undone.");
     if (!confirmed) return;
-
     setDeleting(true);
     setError("");
     try {
       await deleteTask(id);
       navigate("/");
     } catch (err) {
-      setError(
-        err.response?.data?.detail || "Could not delete this task right now."
-      );
+      setError(err.response?.data?.detail || "Could not delete this task right now.");
       setDeleting(false);
     }
   };
@@ -168,18 +187,34 @@ const TaskDetails = () => {
       const { data } = await generateProposal(id);
       setProposal(data.proposal || "");
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-          "Could not generate a proposal right now. Please try again."
-      );
+      setError(err.response?.data?.detail || "Could not generate a proposal right now. Please try again.");
     } finally {
       setProposalLoading(false);
     }
   };
 
+  const handleSubmitReview = async (revieweeId) => {
+    setReviewSubmitting(true);
+    setError("");
+    try {
+      await createReview({
+        reviewee_id: revieweeId,
+        task_id: parseInt(id, 10),
+        rating: reviewForm.rating,
+        text: reviewForm.text || null
+      });
+      setReviewSuccess(true);
+      setReviewForm({ rating: 5, text: "" });
+    } catch (err) {
+      setError(err.response?.data?.detail || "Could not submit review.");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-6 text-sm text-slate-400">
+      <div className="mx-auto max-w-3xl px-4 py-8 text-center text-slate-400">
         Loading task...
       </div>
     );
@@ -187,91 +222,135 @@ const TaskDetails = () => {
 
   if (!task) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-6 text-sm text-red-300">
+      <div className="mx-auto max-w-3xl px-4 py-8 text-center text-red-300">
         Task not found.
       </div>
     );
   }
 
-  const isOwner = currentUserId != null && task.owner_id === currentUserId;
+  const isOwner = currentUser && task.owner_id === currentUser.id;
+  const isAcceptor = currentUser && task.assigned_to === currentUser.id;
+  const canLeaveReview =
+    task.status === "completed" &&
+    currentUser &&
+    (isOwner || isAcceptor) &&
+    !reviewSuccess;
+  const revieweeId = isOwner ? task.assigned_to : isAcceptor ? task.owner_id : null;
 
   const deadline = task.deadline
-    ? new Date(task.deadline).toLocaleString()
+    ? new Date(task.deadline).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      })
     : "No deadline";
 
   const canAccept = task.status === "open";
-  const acceptedCount = task.status === "accepted" ? 1 : 0;
+  const category = categoryConfig[task.category || "paid"] || categoryConfig.paid;
+  const CategoryIcon = category.icon;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
       <button
         onClick={() => navigate(-1)}
-        className="mb-4 text-xs text-slate-400 hover:text-slate-200"
+        className="mb-4 flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-200"
       >
-        ← Back
+        <ArrowLeft className="h-4 w-4" />
+        Back
       </button>
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl shadow-black/40">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <h1 className="text-xl font-semibold text-slate-50">
+
+      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/90 p-6 shadow-xl">
+        {/* Header with badges */}
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <h1 className="text-xl font-semibold text-slate-50 sm:text-2xl">
             {task.title}
           </h1>
-          <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-0.5 text-xs uppercase tracking-wide text-slate-200">
-            {task.status}
-          </span>
-        </div>
-        <p className="mb-4 text-sm text-slate-300">{task.description}</p>
-        <div className="mb-4 grid gap-3 text-xs text-slate-400 md:grid-cols-4">
-          <div>
-            <p className="text-slate-500">Deadline</p>
-            <p>{deadline}</p>
-          </div>
-          <div>
-            <p className="text-slate-500">Reward</p>
-            <p>
-              {task.reward
-                ? `₹${Number(task.reward).toFixed(2)}`
-                : "Not specified"}
-            </p>
-          </div>
-          <div>
-            <p className="text-slate-500">Assigned to</p>
-            <p>{task.assigned_to ? `User #${task.assigned_to}` : "Unassigned"}</p>
-          </div>
-          <div>
-            <p className="text-slate-500">Accepted by</p>
-            <p>
-              {acceptedCount}{" "}
-              {acceptedCount === 1 ? "freelancer" : "freelancers"}
-            </p>
-          </div>
-          <div className="md:col-span-2">
-            <p className="text-slate-500">Task poster contact</p>
-            <p>{contacts.owner_phone || "Not provided"}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase ${
+                task.status === "open"
+                  ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                  : task.status === "accepted"
+                  ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
+                  : "border-sky-500/40 bg-sky-500/15 text-sky-300"
+              }`}
+            >
+              {task.status}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-md border border-primary-500/30 bg-primary-500/10 px-2 py-0.5 text-xs text-primary-300">
+              <CategoryIcon className="h-3.5 w-3.5" />
+              {category.label}
+            </span>
+            {task.inter_college_only && (
+              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-300">
+                <Building2 className="h-3.5 w-3.5" />
+                Inter-College
+              </span>
+            )}
           </div>
         </div>
+
+        <p className="mb-6 text-slate-300">{task.description}</p>
+
+        <div className="mb-6 grid gap-4 text-sm sm:grid-cols-2">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-slate-500" />
+            <span className="text-slate-400">Deadline:</span>
+            <span className="text-slate-200">{deadline}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <IndianRupee className="h-4 w-4 text-slate-500" />
+            <span className="text-slate-400">Reward:</span>
+            <span className="font-medium text-emerald-400">
+              {task.reward ? `₹${Number(task.reward).toFixed(2)}` : "Not specified"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-slate-500" />
+            <span className="text-slate-400">Posted by:</span>
+            <Link
+              to={`/profile/${task.owner_id}`}
+              className="font-medium text-primary-400 hover:underline"
+            >
+              View profile
+            </Link>
+          </div>
+          {task.assigned_to && (
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-slate-500" />
+              <span className="text-slate-400">Accepted by:</span>
+              <Link
+                to={`/profile/${task.assigned_to}`}
+                className="font-medium text-primary-400 hover:underline"
+              >
+                View profile
+              </Link>
+            </div>
+          )}
+        </div>
+
         {error && (
-          <div className="mb-4 rounded border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+          <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
             {error}
           </div>
         )}
-        <div className="mt-2 flex flex-wrap gap-3">
+
+        <div className="flex flex-wrap gap-3">
           {!isOwner && (
             <>
               <button
                 onClick={handleAccept}
                 disabled={!canAccept || accepting}
-                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-primary-900/60 hover:bg-primary-500"
+                className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-500 disabled:opacity-50"
               >
-                {canAccept
-                  ? accepting
-                    ? "Accepting..."
-                    : "Accept task"
-                  : "Not available"}
+                {canAccept ? (accepting ? "Accepting..." : "Accept task") : "Not available"}
               </button>
               <button
                 onClick={handleGenerateProposal}
                 disabled={proposalLoading}
-                className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+                className="rounded-lg border border-slate-700 bg-slate-900 px-5 py-2.5 text-sm font-medium text-slate-100 transition-colors hover:bg-slate-800"
               >
                 {proposalLoading ? "Generating..." : "AI proposal"}
               </button>
@@ -281,8 +360,8 @@ const TaskDetails = () => {
           {isOwner && (
             <>
               <button
-                onClick={() => setEditing((prev) => !prev)}
-                className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+                onClick={() => setEditing((p) => !p)}
+                className="rounded-lg border border-slate-700 bg-slate-900 px-5 py-2.5 text-sm font-medium text-slate-100 hover:bg-slate-800"
               >
                 {editing ? "Cancel edit" : "Edit task"}
               </button>
@@ -290,53 +369,98 @@ const TaskDetails = () => {
                 <button
                   onClick={() => handleStatusChange("completed")}
                   disabled={saving}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-emerald-900/60 hover:bg-emerald-500"
+                  className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500"
                 >
-                  {saving && !editing ? "Updating..." : "Mark as completed"}
+                  {saving ? "Updating..." : "Mark as completed"}
                 </button>
               )}
               {task.status === "completed" && (
                 <button
                   onClick={() => handleStatusChange("open")}
                   disabled={saving}
-                  className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-sky-900/60 hover:bg-sky-500"
+                  className="rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500"
                 >
-                  {saving && !editing ? "Updating..." : "Reopen task"}
+                  Reopen task
                 </button>
               )}
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="rounded-lg border border-red-500/60 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-500/20"
+                className="rounded-lg border border-red-500/60 bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-200 hover:bg-red-500/20"
               >
-                {deleting ? "Deleting..." : "Delete task"}
+                {deleting ? "Deleting..." : "Delete"}
               </button>
-              <div className="mt-4 w-full rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3 text-xs text-slate-300">
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                  Accepted freelancer contact (only you can see this)
+              <div className="w-full rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3">
+                <p className="mb-1 text-xs font-semibold uppercase text-slate-400">
+                  Accepted freelancer contact
                 </p>
-                <p>
-                  {contacts.acceptor_phone
-                    ? contacts.acceptor_phone
-                    : task.assigned_to
-                    ? "The acceptor has not added a phone number yet."
-                    : "No one has accepted this task yet."}
+                <p className="text-sm text-slate-300">
+                  {contacts.acceptor_phone ||
+                    (task.assigned_to
+                      ? "The acceptor has not added a phone number yet."
+                      : "No one has accepted this task yet.")}
                 </p>
               </div>
             </>
           )}
         </div>
 
+        {/* Leave Review (when task completed) */}
+        {canLeaveReview && revieweeId && (
+          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-50">
+              <Star className="h-4 w-4 text-amber-400" />
+              Leave a review
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs text-slate-400">Rating (1-5)</label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setReviewForm((p) => ({ ...p, rating: i }))}
+                      className="rounded p-1 transition-colors hover:bg-slate-800"
+                    >
+                      <Star
+                        className={`h-6 w-6 ${
+                          i <= reviewForm.rating
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-slate-600"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-slate-400">Comment (optional)</label>
+                <textarea
+                  rows={2}
+                  value={reviewForm.text}
+                  onChange={(e) => setReviewForm((p) => ({ ...p, text: e.target.value }))}
+                  placeholder="How was working together?"
+                  className="rounded-lg"
+                />
+              </div>
+              <button
+                onClick={() => handleSubmitReview(revieweeId)}
+                disabled={reviewSubmitting}
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-500"
+              >
+                {reviewSubmitting ? "Submitting..." : "Submit review"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {isOwner && editing && (
-          <form onSubmit={handleSaveEdits} className="mt-6 space-y-4 border-t border-slate-800 pt-4">
-            <h2 className="text-sm font-semibold text-slate-100">
-              Edit your task
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-slate-300">
-                  Title
-                </label>
+          <form onSubmit={handleSaveEdits} className="mt-6 space-y-4 border-t border-slate-800 pt-6">
+            <h2 className="text-base font-semibold text-slate-100">Edit task</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs text-slate-400">Title</label>
                 <input
                   type="text"
                   name="title"
@@ -345,10 +469,8 @@ const TaskDetails = () => {
                   required
                 />
               </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-slate-300">
-                  Description
-                </label>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs text-slate-400">Description</label>
                 <textarea
                   name="description"
                   rows={3}
@@ -358,9 +480,28 @@ const TaskDetails = () => {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-300">
-                  Deadline
-                </label>
+                <label className="mb-1 block text-xs text-slate-400">Category</label>
+                <select
+                  name="category"
+                  value={editForm.category}
+                  onChange={handleEditChange}
+                >
+                  <option value="paid">Paid</option>
+                  <option value="learning">Learning</option>
+                  <option value="collaboration">Collaboration</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2 pt-6">
+                <input
+                  type="checkbox"
+                  name="inter_college_only"
+                  checked={editForm.inter_college_only}
+                  onChange={handleEditChange}
+                />
+                <label className="text-sm text-slate-300">Inter-College Work only</label>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-slate-400">Deadline</label>
                 <input
                   type="datetime-local"
                   name="deadline"
@@ -369,9 +510,7 @@ const TaskDetails = () => {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-300">
-                  Reward (₹)
-                </label>
+                <label className="mb-1 block text-xs text-slate-400">Reward (₹)</label>
                 <input
                   type="number"
                   name="reward"
@@ -385,56 +524,55 @@ const TaskDetails = () => {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-primary-900/60 hover:bg-primary-500"
+              className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-500"
             >
-              {saving ? "Saving changes..." : "Save changes"}
+              {saving ? "Saving..." : "Save changes"}
             </button>
           </form>
         )}
 
         {!proposalLoading && proposal && !isOwner && (
-          <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-slate-50">
-                Generated proposal
-              </h2>
+          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-50">Generated proposal</h3>
               <button
                 type="button"
                 onClick={() => navigator.clipboard?.writeText(proposal)}
-                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-200 hover:bg-slate-800"
+                className="flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
               >
+                <Copy className="h-3.5 w-3.5" />
                 Copy
               </button>
             </div>
-            <textarea readOnly rows={6} value={proposal} />
+            <textarea readOnly rows={6} value={proposal} className="rounded-lg" />
           </div>
         )}
 
-        {!recLoading && recommendedFreelancers.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-            <h2 className="mb-3 text-sm font-semibold text-slate-50">
-              Recommended freelancers (AI)
-            </h2>
-            <div className="grid gap-3 md:grid-cols-2">
-              {recommendedFreelancers.slice(0, 5).map((rec) => (
-                <div
+        {!recLoading && recommendedFreelancers.length > 0 && isOwner && (
+          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-50">
+              <Sparkles className="h-4 w-4 text-primary-400" />
+              Recommended freelancers
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {recommendedFreelancers.slice(0, 4).map((rec) => (
+                <Link
                   key={rec.freelancer.id}
-                  className="rounded-xl border border-slate-800 bg-slate-950/40 p-3 text-xs"
+                  to={`/profile/${rec.freelancer.id}`}
+                  className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/40 p-3 transition-colors hover:bg-slate-800/50"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-100">
-                        {rec.freelancer.email}
-                      </p>
-                      <p className="mt-0.5 line-clamp-2 text-slate-400">
-                        Skills: {rec.freelancer.skills || "Not provided"}
-                      </p>
-                    </div>
-                    <div className="shrink-0 rounded-full bg-primary-600/10 px-2 py-1 font-semibold text-primary-300 ring-1 ring-primary-500/30">
-                      {rec.match_percentage}%
-                    </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-slate-100">
+                      {rec.freelancer.email}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {rec.freelancer.skills || "No skills listed"}
+                    </p>
                   </div>
-                </div>
+                  <span className="shrink-0 rounded-full bg-primary-600/20 px-2 py-0.5 text-xs font-semibold text-primary-300">
+                    {rec.match_percentage}%
+                  </span>
+                </Link>
               ))}
             </div>
           </div>
@@ -445,4 +583,3 @@ const TaskDetails = () => {
 };
 
 export default TaskDetails;
-

@@ -8,6 +8,8 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Numeric,
+    Boolean,
+    Text,
 )
 from sqlalchemy.orm import relationship
 
@@ -29,6 +31,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     phone = Column(String, nullable=True)
     skills = Column(String, nullable=True)
+    college_name = Column(String, nullable=True)
 
     owned_tasks = relationship(
         "Task",
@@ -39,6 +42,18 @@ class User(Base):
         "Task",
         back_populates="assigned_user",
         foreign_keys="Task.assigned_to",
+    )
+    # Reviews received from others
+    reviews_received = relationship(
+        "Review",
+        back_populates="reviewee",
+        foreign_keys="Review.reviewee_id",
+    )
+    # Reviews written by this user
+    reviews_written = relationship(
+        "Review",
+        back_populates="reviewer",
+        foreign_keys="Review.reviewer_id",
     )
 
 
@@ -51,6 +66,8 @@ class Task(Base):
     deadline = Column(DateTime, nullable=True)
     reward = Column(Numeric(scale=2), nullable=True)
     status = Column(Enum(TaskStatus), default=TaskStatus.open, nullable=False)
+    category = Column(String(50), default="paid", nullable=False)
+    inter_college_only = Column(Boolean, default=False, nullable=False)
 
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -67,4 +84,33 @@ class Task(Base):
         back_populates="assigned_tasks",
         foreign_keys=[assigned_to],
     )
+
+
+class Review(Base):
+    """User reviews: star rating + text feedback."""
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    reviewee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
+    rating = Column(Integer, nullable=False)  # 1-5 stars
+    text = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="reviews_written")
+    reviewee = relationship("User", foreign_keys=[reviewee_id], back_populates="reviews_received")
+    task = relationship("Task", backref="reviews")
+
+
+class ContactFeedback(Base):
+    """Contact/feedback submissions from users."""
+    __tablename__ = "contact_feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # optional if not logged in
+    type = Column(String, nullable=False)  # "feedback", "report", "contact"
+    subject = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 

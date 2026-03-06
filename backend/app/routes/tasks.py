@@ -1,11 +1,12 @@
-from typing import List
+from typing import List, Optional
+
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
-from ..auth import get_current_user
+from ..auth import get_current_user, get_current_user_optional
 from ..database import get_db
 from ..services.matching import match_percentage
 from ..services.proposals import ProposalContext, generate_proposal
@@ -15,8 +16,29 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[schemas.TaskOut])
-def list_tasks(db: Session = Depends(get_db)):
-    tasks = db.query(models.Task).order_by(models.Task.created_at.desc()).all()
+def list_tasks(
+    db: Session = Depends(get_db),
+    category: Optional[str] = Query(None, description="Filter by category: paid, learning, collaboration"),
+    same_college_only: Optional[bool] = Query(None, description="Show only tasks from my college"),
+    current_user: Optional[models.User] = Depends(get_current_user_optional),
+):
+    """List all tasks with optional category and college filters."""
+    q = db.query(models.Task).options(joinedload(models.Task.owner)).order_by(models.Task.created_at.desc())
+    if category and category in ("paid", "learning", "collaboration"):
+        q = q.filter(models.Task.category == category)
+    tasks = q.all()
+    # Filter: inter_college_only tasks - hide from users from other colleges
+    if current_user and current_user.college_name:
+        tasks = [
+            t for t in tasks
+            if not t.inter_college_only or (t.owner and t.owner.college_name == current_user.college_name)
+        ]
+    elif current_user is None:
+        # Not logged in: hide inter_college_only tasks (we can't verify college)
+        tasks = [t for t in tasks if not t.inter_college_only]
+    # Filter: same_college_only - show only tasks from my college
+    if same_college_only and current_user and current_user.college_name:
+        tasks = [t for t in tasks if t.owner and t.owner.college_name == current_user.college_name]
     return tasks
 
 
@@ -27,6 +49,7 @@ def list_my_tasks(
 ):
     tasks = (
         db.query(models.Task)
+        .options(joinedload(models.Task.owner))
         .filter(models.Task.owner_id == current_user.id)
         .order_by(models.Task.created_at.desc())
         .all()
@@ -36,7 +59,7 @@ def list_my_tasks(
 
 @router.get("/{task_id}", response_model=schemas.TaskOut)
 def get_task(task_id: int, db: Session = Depends(get_db)):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = db.query(models.Task).options(joinedload(models.Task.owner)).filter(models.Task.id == task_id).first()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     return task
@@ -125,12 +148,16 @@ def create_task(
             deadline = datetime.fromisoformat(deadline)
         except ValueError:
             deadline = None
+    category = task_in.category if task_in.category else "paid"
+    inter_college_only = task_in.inter_college_only or False
     task = models.Task(
         title=task_in.title,
         description=task_in.description,
         deadline=deadline,
         reward=task_in.reward,
         owner_id=current_user.id,
+        category=category,
+        inter_college_only=inter_college_only,
     )
     db.add(task)
     db.commit()
@@ -154,7 +181,7 @@ def update_task(
             detail="You are not allowed to update this task",
         )
 
-    update_data = task_in.dict(exclude_unset=True)
+    update_data = task_in.model_dump(exclude_unset=True)
 
     deadline = update_data.get("deadline")
     if isinstance(deadline, str):
@@ -163,6 +190,10 @@ def update_task(
         except ValueError:
             deadline = None
         update_data["deadline"] = deadline
+
+    if "category" in update_data:
+        val = update_data["category"]
+        update_data["category"] = val.value if hasattr(val, "value") else str(val)
 
     for field, value in update_data.items():
         setattr(task, field, value)

@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FileText, Calendar, IndianRupee, BookOpen, Users, Briefcase, Building2 } from "lucide-react";
 import { createTask } from "../services/api";
+
+const CATEGORIES = [
+  { value: "paid", label: "Paid Task", icon: IndianRupee, desc: "Offer payment for completed work" },
+  { value: "learning", label: "Learning Help", icon: BookOpen, desc: "Request help learning a skill" },
+  { value: "collaboration", label: "Collaboration", icon: Users, desc: "Find partners for projects" }
+];
 
 const CreateTask = () => {
   const navigate = useNavigate();
@@ -10,17 +17,24 @@ const CreateTask = () => {
     title: "",
     description: "",
     deadline: "",
-    reward: ""
+    reward: "",
+    category: "paid",
+    inter_college_only: false
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   if (!token) {
     navigate("/login");
+    return null;
   }
 
   const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value, type } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? e.target.checked : value
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -31,7 +45,9 @@ const CreateTask = () => {
       const payload = {
         ...form,
         reward: form.reward ? Number(form.reward) : null,
-        deadline: form.deadline || null
+        deadline: form.deadline || null,
+        category: form.category,
+        inter_college_only: form.inter_college_only
       };
       await createTask(payload);
       navigate("/");
@@ -44,24 +60,28 @@ const CreateTask = () => {
 
   return (
     <div className="mx-auto max-w-4xl py-6">
-      <div className="mb-6 flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold text-slate-50">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-slate-50 sm:text-3xl">
           Post a task for your next deadline
         </h1>
-        <p className="text-sm text-slate-400">
+        <p className="mt-1 text-sm text-slate-400">
           Share what you&apos;re stuck on—an assignment, project, event, or club
           work—and get help from other students.
         </p>
       </div>
       {error && (
-        <div className="mb-4 rounded border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+        <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {error}
         </div>
       )}
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1.4fr),minmax(0,1fr)]">
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-slate-800/80 bg-slate-900/90 p-5 shadow-lg shadow-black/40">
+      <div className="grid gap-6 lg:grid-cols-[1.4fr,1fr]">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5 rounded-2xl border border-slate-800/80 bg-slate-900/90 p-6 shadow-xl shadow-black/40"
+        >
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-300">
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+              <FileText className="h-3.5 w-3.5" />
               Title
             </label>
             <input
@@ -74,7 +94,7 @@ const CreateTask = () => {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-300">
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
               Description
             </label>
             <textarea
@@ -86,9 +106,53 @@ const CreateTask = () => {
               placeholder="Add enough detail so someone can help you effectively."
             />
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+
+          {/* Category selection */}
+          <div>
+            <label className="mb-2 block text-xs font-medium text-slate-300">
+              Category
+            </label>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const isSelected = form.category === cat.value;
+                return (
+                  <button
+                    key={cat.value}
+                    type="button"
+                    onClick={() => setForm((p) => ({ ...p, category: cat.value }))}
+                    className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-all ${
+                      isSelected
+                        ? "border-primary-500 bg-primary-500/15 text-primary-300"
+                        : "border-slate-700 bg-slate-900/60 text-slate-400 hover:border-slate-600 hover:bg-slate-800/60"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="text-xs font-medium">{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2 transition-colors hover:bg-slate-800/60">
+              <input
+                type="checkbox"
+                name="inter_college_only"
+                checked={form.inter_college_only}
+                onChange={handleChange}
+                className="h-4 w-4 rounded border-slate-600"
+              />
+              <Building2 className="h-4 w-4 text-slate-400" />
+              <span className="text-sm text-slate-300">Inter-College Work only</span>
+            </label>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-300">
+              <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+                <Calendar className="h-3.5 w-3.5" />
                 Deadline
               </label>
               <input
@@ -99,8 +163,9 @@ const CreateTask = () => {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-300">
-                Reward (₹)
+              <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+                <IndianRupee className="h-3.5 w-3.5" />
+                Reward (₹) — for paid tasks
               </label>
               <input
                 type="number"
@@ -116,22 +181,32 @@ const CreateTask = () => {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow shadow-primary-900/60 hover:bg-primary-500"
+            className="w-full rounded-lg bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-500 disabled:opacity-50 sm:w-auto"
           >
             {loading ? "Creating..." : "Create task"}
           </button>
         </form>
 
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5 text-xs text-slate-300 shadow-lg shadow-black/40">
-          <h2 className="mb-3 text-sm font-semibold text-slate-100">
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5 text-sm text-slate-300 shadow-lg">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-100">
+            <Briefcase className="h-4 w-4" />
             Tips for clearer tasks
           </h2>
-          <ul className="mb-4 list-disc space-y-1 pl-5">
-            <li>Mention the subject, course, or club the work is for.</li>
-            <li>Add links or files once someone accepts your task.</li>
-            <li>Be honest about the timeline and effort.</li>
+          <ul className="mb-4 space-y-2 pl-1">
+            <li className="flex gap-2">
+              <span className="text-primary-400">•</span>
+              Mention the subject, course, or club the work is for.
+            </li>
+            <li className="flex gap-2">
+              <span className="text-primary-400">•</span>
+              Add links or files once someone accepts your task.
+            </li>
+            <li className="flex gap-2">
+              <span className="text-primary-400">•</span>
+              Be honest about the timeline and effort.
+            </li>
           </ul>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             Clear tasks get accepted faster and lead to better collaboration
             between students.
           </p>
@@ -142,4 +217,3 @@ const CreateTask = () => {
 };
 
 export default CreateTask;
-

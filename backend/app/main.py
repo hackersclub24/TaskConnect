@@ -5,6 +5,8 @@ from .database import Base, engine
 from .routes import auth as auth_routes
 from .routes import tasks as task_routes
 from .routes import users as user_routes
+from .routes import reviews as review_routes
+from .routes import contact as contact_routes
 
 
 Base.metadata.create_all(bind=engine)
@@ -35,6 +37,8 @@ app.add_middleware(
 app.include_router(auth_routes.router, prefix="/api/auth", tags=["auth"])
 app.include_router(task_routes.router, prefix="/api/tasks", tags=["tasks"])
 app.include_router(user_routes.router, prefix="/api/users", tags=["users"])
+app.include_router(review_routes.router, prefix="/api/reviews", tags=["reviews"])
+app.include_router(contact_routes.router, prefix="/api/contact", tags=["contact"])
 
 
 @app.get("/api/health")

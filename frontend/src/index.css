@@ -37,13 +37,19 @@ a {
 input,
 textarea,
 select {
-  @apply w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  @apply w-full rounded-lg border px-3 py-2.5 text-sm transition-colors;
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] select {
+  @apply bg-slate-900 border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
 }
 
 :root[data-theme="light"] input,
 :root[data-theme="light"] textarea,
 :root[data-theme="light"] select {
-  @apply bg-white border-slate-300 text-slate-900;
+  @apply bg-white border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
 }
 
 input::placeholder,
