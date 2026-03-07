@@ -231,7 +231,8 @@ const TaskDetails = () => {
 
   const isOwner = currentUser && task.owner_id === currentUser.id;
   const isAcceptor = currentUser && task.assigned_to === currentUser.id;
-  const canAccessChat = isOwner || isAcceptor;
+  // A task chat shouldn't be accessible if there is nobody to chat with (i.e. not assigned)
+  const canAccessChat = task.assigned_to && (isOwner || isAcceptor);
   const canLeaveReview =
     task.status === "completed" &&
     currentUser &&

@@ -126,16 +126,16 @@ const TaskChat = ({ taskId, currentUserId, canAccess }) => {
             {messages.map((msg) => (
               <div
                 key={msg.id || `${msg.sender_id}-${msg.timestamp}`}
-                className={`flex flex-col ${msg.sender_id === currentUserId ? "items-end" : "items-start"}`}
+                className={`flex flex-col ${String(msg.sender_id) === String(currentUserId) ? "items-end" : "items-start"}`}
               >
                 <div
                   className={`max-w-[85%] rounded-lg px-3 py-2 ${
-                    msg.sender_id === currentUserId
+                    String(msg.sender_id) === String(currentUserId)
                       ? "bg-primary-600/80 text-white"
                       : "bg-slate-800 text-slate-200"
                   }`}
                 >
-                  {msg.sender_id !== currentUserId && (
+                  {String(msg.sender_id) !== String(currentUserId) && (
                     <p className="mb-0.5 text-[10px] font-medium text-slate-400">
                       {msg.sender_email || `User #${msg.sender_id}`}
                     </p>

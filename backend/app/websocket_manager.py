@@ -27,8 +27,7 @@ class ConnectionManager:
         websocket: WebSocket,
         task_id: int,
     ) -> None:
-        """Accept a new WebSocket connection and add to the task room."""
-        await websocket.accept()
+        """Add a WebSocket connection to the task room. Must be accepted by the router first."""
         self.active_connections[task_id].add(websocket)
         logger.info(f"Client connected to task {task_id}, total: {len(self.active_connections[task_id])}")
 
@@ -49,7 +48,7 @@ class ConnectionManager:
         if task_id not in self.active_connections:
             return
         disconnected = set()
-        for connection in self.active_connections[task_id]:
+        for connection in list(self.active_connections[task_id]):
             if connection is exclude:
                 continue
             try:

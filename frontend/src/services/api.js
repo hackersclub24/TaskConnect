@@ -2,6 +2,7 @@ import axios from "axios";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
+  // import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL
@@ -63,13 +64,13 @@ export const fetchPlatformReviews = () => api.get("/platform-reviews/");
 export const createPlatformReview = (data) => api.post("/platform-reviews/", data);
 
 // Chat messages (REST for history)
-// WebSocket URL: derive from API base (http://localhost:8000/api -> ws://localhost:8000)
+// WebSocket URL: derive from API base (http://127.0.0.1:8000/api -> ws://127.0.0.1:8000)
 const getWsBase = () => {
-  const env = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  const env = import.meta.env.VITE_WS_URL || API_BASE_URL;
   if (!env) return "ws://localhost:8000";
   const withoutApi = env.replace(/\/api\/?$/, "").trim();
   const wsBase = withoutApi.replace(/^https:/, "wss:").replace(/^http:/, "ws:");
-  return wsBase || "ws://localhost:8000";
+  return wsBase;
 };
 export const getChatWebSocketUrl = (taskId) => {
   const token = localStorage.getItem("token");
