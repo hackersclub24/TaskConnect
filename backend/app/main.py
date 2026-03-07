@@ -22,7 +22,8 @@ app = FastAPI(
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://signature-breakdown-significantly-interesting.trycloudflare.com"
+    "https://signature-breakdown-significantly-interesting.trycloudflare.com",
+    "https://skillstreet-nmtosuvo3-hackersclub24s-projects.vercel.app/",
     
 ]
 
