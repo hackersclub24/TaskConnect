@@ -8,6 +8,7 @@ from .routes import users as user_routes
 from .routes import reviews as review_routes
 from .routes import contact as contact_routes
 from .routes import chat as chat_routes
+from .routes import platform_reviews as platform_reviews_routes
 
 
 Base.metadata.create_all(bind=engine)
@@ -41,6 +42,7 @@ app.include_router(user_routes.router, prefix="/api/users", tags=["users"])
 app.include_router(review_routes.router, prefix="/api/reviews", tags=["reviews"])
 app.include_router(contact_routes.router, prefix="/api/contact", tags=["contact"])
 app.include_router(chat_routes.router, prefix="/ws", tags=["chat"])
+app.include_router(platform_reviews_routes.router, prefix="/api/platform-reviews", tags=["platform-reviews"])
 
 
 @app.get("/api/health")

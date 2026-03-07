@@ -118,6 +118,19 @@ class Review(Base):
     task = relationship("Task", backref="reviews")
 
 
+class PlatformReview(Base):
+    """Reviews about the Skillstreet platform itself (what users think of the platform)."""
+    __tablename__ = "platform_reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    rating = Column(Integer, nullable=False)  # 1-5 stars
+    review_text = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", foreign_keys=[user_id])
+
+
 class ContactFeedback(Base):
     """Contact/feedback submissions from users."""
     __tablename__ = "contact_feedback"

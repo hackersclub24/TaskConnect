@@ -157,6 +157,24 @@ class MessageCreate(BaseModel):
     message: str
 
 
+# --- Platform reviews (reviews about the platform itself) ---
+class PlatformReviewCreate(BaseModel):
+    rating: int  # 1-5
+    review_text: str
+
+
+class PlatformReviewOut(BaseModel):
+    id: int
+    user_id: int
+    rating: int
+    review_text: str
+    created_at: datetime
+    user_email: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
 # --- Contact/Feedback schemas ---
 class ContactFeedbackCreate(BaseModel):
     type: str  # "feedback", "report", "contact"

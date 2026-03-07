@@ -8,7 +8,8 @@ import {
   Sun,
   Moon,
   MessageCircle,
-  GraduationCap
+  GraduationCap,
+  Star
 } from "lucide-react";
 
 const Navbar = ({ theme = "dark", onToggleTheme }) => {
@@ -76,6 +77,13 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
                 <span className="hidden sm:inline">Create Task</span>
               </Link>
               <Link
+                to="/reviews"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
+              >
+                <Star className="h-4 w-4" />
+                <span className="hidden sm:inline">Reviews</span>
+              </Link>
+              <Link
                 to="/contact"
                 className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
               >
@@ -92,6 +100,13 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
             </>
           ) : (
             <>
+              <Link
+                to="/reviews"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
+              >
+                <Star className="h-4 w-4" />
+                <span className="hidden sm:inline">Reviews</span>
+              </Link>
               <Link
                 to="/contact"
                 className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"

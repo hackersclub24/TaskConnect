@@ -57,14 +57,6 @@ def list_my_tasks(
     return tasks
 
 
-@router.get("/{task_id}", response_model=schemas.TaskOut)
-def get_task(task_id: int, db: Session = Depends(get_db)):
-    task = db.query(models.Task).options(joinedload(models.Task.owner)).filter(models.Task.id == task_id).first()
-    if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    return task
-
-
 @router.get("/{task_id}/contacts", response_model=schemas.TaskContacts)
 def get_task_contacts(
     task_id: int,
@@ -121,6 +113,15 @@ def get_task_messages(
             )
         )
     return result
+
+
+@router.get("/{task_id}", response_model=schemas.TaskOut)
+def get_task(task_id: int, db: Session = Depends(get_db)):
+    """Get single task by ID. Must be after more specific routes like /messages."""
+    task = db.query(models.Task).options(joinedload(models.Task.owner)).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    return task
 
 
 @router.get(

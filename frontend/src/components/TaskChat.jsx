@@ -32,8 +32,10 @@ const TaskChat = ({ taskId, currentUserId, canAccess }) => {
       try {
         const { data } = await fetchTaskMessages(taskId);
         setMessages(data || []);
-      } catch {
-        setError("Failed to load messages.");
+      } catch (err) {
+        const detail = err.response?.data?.detail;
+        const msg = typeof detail === "string" ? detail : "Failed to load messages.";
+        setError(msg);
       } finally {
         setLoading(false);
       }
@@ -44,12 +46,23 @@ const TaskChat = ({ taskId, currentUserId, canAccess }) => {
   // WebSocket connection
   useEffect(() => {
     if (!canAccess || !taskId) return;
+    setError("");
     const url = getChatWebSocketUrl(taskId);
     const ws = new WebSocket(url);
 
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
-    ws.onerror = () => setError("Connection error. Reconnecting...");
+    ws.onopen = () => {
+      setConnected(true);
+      setError("");
+    };
+    ws.onclose = (event) => {
+      setConnected(false);
+      if (event.code !== 1000 && event.code !== 1001 && !event.wasClean) {
+        setError((prev) => prev || "Disconnected. Check that you have access to this chat.");
+      }
+    };
+    ws.onerror = () => {
+      setError("Unable to connect. Ensure the backend is running and try again.");
+    };
 
     ws.onmessage = (event) => {
       try {
@@ -84,11 +97,13 @@ const TaskChat = ({ taskId, currentUserId, canAccess }) => {
           <MessageCircle className="h-4 w-4 text-primary-400" />
           Task Chat
         </h3>
-        {connected && (
+        {connected ? (
           <span className="flex items-center gap-1.5 text-xs text-emerald-400">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
             Live
           </span>
+        ) : (
+          <span className="text-xs text-slate-500">Connecting...</span>
         )}
       </div>
 

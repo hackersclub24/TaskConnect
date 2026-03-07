@@ -8,6 +8,7 @@ import CreateTask from "./pages/CreateTask";
 import TaskDetails from "./pages/TaskDetails";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
+import PlatformReviews from "./pages/PlatformReviews";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -50,6 +51,7 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/reviews" element={<PlatformReviews />} />
           <Route path="/profile/:userId" element={<Profile />} />
           <Route
             path="/create-task"

@@ -34,7 +34,16 @@ CREATE TABLE IF NOT EXISTS messages (
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. Contact feedback table
+-- 6. Platform reviews (what users write about the platform)
+CREATE TABLE IF NOT EXISTS platform_reviews (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  rating INTEGER NOT NULL,
+  review_text TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. Contact feedback table
 CREATE TABLE IF NOT EXISTS contact_feedback (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id),
