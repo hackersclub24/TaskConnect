@@ -45,6 +45,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, task_id: int):
     WebSocket endpoint for task chat.
     Client must send ?token=JWT in query params for authentication.
     """
+    # return {'message': 'hello'}
     db = SessionLocal()
     try:
         token = websocket.query_params.get("token")
