@@ -46,7 +46,6 @@ def recommended_tasks(
         db.query(models.Task)
         .options(joinedload(models.Task.owner))
         .filter(models.Task.status == models.TaskStatus.open)
-        .filter(models.Task.owner_id != user_id)
         .order_by(models.Task.created_at.desc())
         .all()
     )
