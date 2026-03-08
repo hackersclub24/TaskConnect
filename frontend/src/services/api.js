@@ -33,6 +33,8 @@ export const createTask = (data) => api.post("/tasks/", data);
 
 export const acceptTask = (id) => api.post(`/tasks/${id}/accept`);
 
+export const cancelTaskAcceptance = (id) => api.post(`/tasks/${id}/cancel-acceptance`);
+
 export const updateTask = (id, data) => api.patch(`/tasks/${id}`, data);
 
 export const updateTaskStatus = (id, status) =>
@@ -51,6 +53,10 @@ export const fetchRecommendedTasks = (userId) =>
   api.get(`/users/${userId}/recommended-tasks`);
 
 export const fetchUserById = (userId) => api.get(`/users/${userId}`);
+
+export const updateUserProfile = (data) => api.patch("/users/me", data);
+
+export const fetchUserStats = (userId) => api.get(`/users/${userId}/stats`);
 
 // Reviews
 export const createReview = (data) => api.post("/reviews/", data);

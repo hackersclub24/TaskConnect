@@ -2,97 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-:root[data-theme="dark"] body {
-  @apply bg-slate-950 text-slate-100 antialiased;
-  background-image:
-    radial-gradient(circle at top left, rgba(79, 70, 229, 0.25), transparent 55%),
-    radial-gradient(circle at bottom right, rgba(8, 47, 73, 0.6), transparent 55%);
-  background-attachment: fixed;
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased transition-colors duration-300;
+  }
+  
+  :root[data-theme="dark"] body {
+    @apply bg-slate-950 text-slate-100;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    @apply tracking-tight;
+  }
 }
 
-:root[data-theme="light"] body {
-  @apply bg-slate-50 text-slate-900 antialiased;
-  background-image:
-    radial-gradient(circle at top left, rgba(191, 219, 254, 0.8), transparent 55%),
-    radial-gradient(circle at bottom right, rgba(224, 231, 255, 0.9), transparent 55%);
-  background-attachment: fixed;
-}
+@layer components {
+  /* Forms */
+  input,
+  textarea,
+  select {
+    @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 transition-all focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/20;
+  }
 
-a {
-  @apply text-primary-500 hover:text-primary-600;
-}
+  [data-theme="dark"] input,
+  [data-theme="dark"] textarea,
+  [data-theme="dark"] select {
+    @apply border-slate-700 bg-slate-900/50 text-slate-100;
+  }
 
-:root[data-theme="light"] a {
-  @apply text-primary-600 hover:text-primary-700;
-}
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-slate-400;
+  }
 
-:root[data-theme="dark"] nav {
-  @apply bg-slate-950/80 border-slate-800/80 text-slate-100;
-}
+  [data-theme="dark"] input::placeholder,
+  [data-theme="dark"] textarea::placeholder {
+    @apply text-slate-500;
+  }
 
-:root[data-theme="light"] nav {
-  @apply bg-white/80 border-slate-200 text-slate-900;
-}
+  button {
+    @apply disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 active:scale-95;
+  }
 
-input,
-textarea,
-select {
-  @apply w-full rounded-lg border px-3 py-2.5 text-sm transition-colors;
-}
+  a {
+    @apply text-primary-600 transition-colors hover:text-primary-700;
+  }
 
-:root[data-theme="dark"] input,
-:root[data-theme="dark"] textarea,
-:root[data-theme="dark"] select {
-  @apply bg-slate-900 border-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
-}
+  [data-theme="dark"] a {
+    @apply text-primary-400 hover:text-primary-300;
+  }
 
-:root[data-theme="light"] input,
-:root[data-theme="light"] textarea,
-:root[data-theme="light"] select {
-  @apply bg-white border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
-}
-
-input::placeholder,
-textarea::placeholder {
-  @apply text-slate-500;
-}
-
-button {
-  @apply disabled:opacity-50 disabled:cursor-not-allowed;
-}
-
-/* Light mode overrides for dark utility classes so text/cards stay readable */
-:root[data-theme="light"] .bg-slate-950,
-:root[data-theme="light"] .bg-slate-900 {
-  @apply bg-white;
-}
-
-:root[data-theme="light"] .bg-slate-900\/80,
-:root[data-theme="light"] .bg-slate-900\/90,
-:root[data-theme="light"] .bg-slate-950\/80,
-:root[data-theme="light"] .bg-slate-950\/90 {
-  @apply bg-white/90;
-}
-
-:root[data-theme="light"] .border-slate-800,
-:root[data-theme="light"] .border-slate-800\/80,
-:root[data-theme="light"] .border-slate-700 {
-  @apply border-slate-200;
-}
-
-:root[data-theme="light"] .text-white,
-:root[data-theme="light"] .text-slate-50,
-:root[data-theme="light"] .text-slate-100,
-:root[data-theme="light"] .text-slate-200 {
-  @apply text-slate-900;
-}
-
-:root[data-theme="light"] .text-slate-300 {
-  @apply text-slate-700;
-}
-
-:root[data-theme="light"] .text-slate-400 {
-  @apply text-slate-600;
+  /* Shared abstract gradients handled by tailwind classes */
 }
 
 

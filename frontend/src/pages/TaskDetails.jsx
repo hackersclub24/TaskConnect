@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import {
   acceptTask,
+  cancelTaskAcceptance,
   createReview,
   deleteTask,
   fetchCurrentUser,
@@ -116,6 +117,26 @@ const TaskDetails = () => {
     } catch (err) {
       setError(err.response?.data?.detail || "Could not accept this task right now.");
     } finally {
+      setAccepting(false);
+    }
+  };
+
+  const handleCancelAcceptance = async () => {
+    const confirmed = window.confirm("Are you sure you want to cancel the acceptance of this task?");
+    if (!confirmed) return;
+    setSaving(true);
+    setAccepting(true);
+    setError("");
+    try {
+      const { data } = await cancelTaskAcceptance(id);
+      setTask(data);
+      if (isOwner) {
+         setContacts(prev => ({ ...prev, acceptor_phone: null }));
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || "Could not cancel task acceptance right now.");
+    } finally {
+      setSaving(false);
       setAccepting(false);
     }
   };
@@ -264,30 +285,30 @@ const TaskDetails = () => {
         Back
       </button>
 
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/90 p-6 shadow-xl">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800/80 dark:bg-slate-900/90">
         {/* Header with badges */}
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-xl font-semibold text-slate-50 sm:text-2xl">
+          <h1 className="text-xl font-semibold font-heading text-slate-900 sm:text-2xl dark:text-slate-50">
             {task.title}
           </h1>
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase ${
                 task.status === "open"
-                  ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/15 dark:text-emerald-300"
                   : task.status === "accepted"
-                  ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
-                  : "border-sky-500/40 bg-sky-500/15 text-sky-300"
+                  ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-300"
+                  : "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/40 dark:bg-sky-500/15 dark:text-sky-300"
               }`}
             >
               {task.status}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-primary-500/30 bg-primary-500/10 px-2 py-0.5 text-xs text-primary-300">
+            <span className="inline-flex items-center gap-1 rounded-md border border-primary-200 bg-primary-50 px-2 py-0.5 text-xs text-primary-700 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-300">
               <CategoryIcon className="h-3.5 w-3.5" />
               {category.label}
             </span>
             {task.inter_college_only && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-300">
+              <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
                 <Building2 className="h-3.5 w-3.5" />
                 Inter-College
               </span>
@@ -295,38 +316,38 @@ const TaskDetails = () => {
           </div>
         </div>
 
-        <p className="mb-6 text-slate-300">{task.description}</p>
+        <p className="mb-6 text-slate-700 dark:text-slate-300">{task.description}</p>
 
         <div className="mb-6 grid gap-4 text-sm sm:grid-cols-2">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-slate-500" />
-            <span className="text-slate-400">Deadline:</span>
-            <span className="text-slate-200">{deadline}</span>
+            <Calendar className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <span className="text-slate-500 dark:text-slate-400">Deadline:</span>
+            <span className="font-medium text-slate-900 dark:text-slate-200">{deadline}</span>
           </div>
           <div className="flex items-center gap-2">
-            <IndianRupee className="h-4 w-4 text-slate-500" />
-            <span className="text-slate-400">Reward:</span>
-            <span className="font-medium text-emerald-400">
+            <IndianRupee className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <span className="text-slate-500 dark:text-slate-400">Reward:</span>
+            <span className="font-semibold text-emerald-600 dark:font-medium dark:text-emerald-400">
               {task.reward ? `₹${Number(task.reward).toFixed(2)}` : "Not specified"}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-slate-500" />
-            <span className="text-slate-400">Posted by:</span>
+            <User className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <span className="text-slate-500 dark:text-slate-400">Posted by:</span>
             <Link
               to={`/profile/${task.owner_id}`}
-              className="font-medium text-primary-400 hover:underline"
+              className="font-medium text-primary-600 hover:text-primary-700 hover:underline dark:text-primary-400 dark:hover:text-primary-300"
             >
               View profile
             </Link>
           </div>
           {task.assigned_to && (
             <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-slate-500" />
-              <span className="text-slate-400">Accepted by:</span>
+              <User className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <span className="text-slate-500 dark:text-slate-400">Accepted by:</span>
               <Link
                 to={`/profile/${task.assigned_to}`}
-                className="font-medium text-primary-400 hover:underline"
+                className="font-medium text-primary-600 hover:text-primary-700 hover:underline dark:text-primary-400 dark:hover:text-primary-300"
               >
                 View profile
               </Link>
@@ -343,17 +364,27 @@ const TaskDetails = () => {
         <div className="flex flex-wrap gap-3">
           {!isOwner && (
             <>
-              <button
-                onClick={handleAccept}
-                disabled={!canAccept || accepting}
-                className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-500 disabled:opacity-50"
-              >
-                {canAccept ? (accepting ? "Accepting..." : "Accept task") : "Not available"}
-              </button>
+              {task.status === "accepted" && isAcceptor ? (
+                <button
+                  onClick={handleCancelAcceptance}
+                  disabled={saving || accepting}
+                  className="rounded-lg border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-100 disabled:opacity-50 dark:border-red-500/60 dark:bg-red-500/10 dark:text-red-200 dark:shadow-md dark:hover:bg-red-500/20"
+                >
+                  {accepting ? "Canceling..." : "Cancel my acceptance"}
+                </button>
+              ) : (
+                <button
+                  onClick={handleAccept}
+                  disabled={!canAccept || accepting}
+                  className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-500 disabled:opacity-50"
+                >
+                  {canAccept ? (accepting ? "Accepting..." : "Accept task") : "Not available"}
+                </button>
+              )}
               <button
                 onClick={handleGenerateProposal}
                 disabled={proposalLoading}
-                className="rounded-lg border border-slate-700 bg-slate-900 px-5 py-2.5 text-sm font-medium text-slate-100 transition-colors hover:bg-slate-800"
+                className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
               >
                 {proposalLoading ? "Generating..." : "AI proposal"}
               </button>
@@ -364,7 +395,7 @@ const TaskDetails = () => {
             <>
               <button
                 onClick={() => setEditing((p) => !p)}
-                className="rounded-lg border border-slate-700 bg-slate-900 px-5 py-2.5 text-sm font-medium text-slate-100 hover:bg-slate-800"
+                className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
               >
                 {editing ? "Cancel edit" : "Edit task"}
               </button>
@@ -389,15 +420,24 @@ const TaskDetails = () => {
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="rounded-lg border border-red-500/60 bg-red-500/10 px-5 py-2.5 text-sm font-medium text-red-200 hover:bg-red-500/20"
+                className="rounded-lg border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-100 dark:border-red-500/60 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>
-              <div className="w-full rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3">
-                <p className="mb-1 text-xs font-semibold uppercase text-slate-400">
+              {task.status === "accepted" && task.assigned_to && (
+                <button
+                  onClick={handleCancelAcceptance}
+                  disabled={saving || accepting}
+                  className="rounded-lg border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-100 disabled:opacity-50 dark:border-red-500/60 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                >
+                  {saving ? "Canceling..." : "Revoke assignment"}
+                </button>
+              )}
+              <div className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80">
+                <p className="mb-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                   Accepted freelancer contact
                 </p>
-                <p className="text-sm text-slate-300">
+                <p className="text-sm text-slate-700 dark:text-slate-300">
                   {contacts.acceptor_phone ||
                     (task.assigned_to
                       ? "The acceptor has not added a phone number yet."
@@ -421,14 +461,14 @@ const TaskDetails = () => {
 
         {/* Leave Review (when task completed) */}
         {canLeaveReview && revieweeId && (
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-50">
-              <Star className="h-4 w-4 text-amber-400" />
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold font-heading text-slate-900 dark:text-slate-50">
+              <Star className="h-4 w-4 text-amber-500 dark:text-amber-400" />
               Leave a review
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs text-slate-400">Rating (1-5)</label>
+                <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">Rating (1-5)</label>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <button
@@ -441,7 +481,7 @@ const TaskDetails = () => {
                         className={`h-6 w-6 ${
                           i <= reviewForm.rating
                             ? "fill-amber-400 text-amber-400"
-                            : "text-slate-600"
+                            : "text-slate-300 dark:text-slate-600"
                         }`}
                       />
                     </button>
@@ -449,13 +489,13 @@ const TaskDetails = () => {
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs text-slate-400">Comment (optional)</label>
+                <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">Comment (optional)</label>
                 <textarea
                   rows={2}
                   value={reviewForm.text}
                   onChange={(e) => setReviewForm((p) => ({ ...p, text: e.target.value }))}
                   placeholder="How was working together?"
-                  className="rounded-lg"
+                  className="rounded-lg w-full bg-white border border-slate-300 text-slate-900 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-950/50 dark:border-slate-800/80 dark:text-slate-200"
                 />
               </div>
               <button
@@ -470,35 +510,38 @@ const TaskDetails = () => {
         )}
 
         {isOwner && editing && (
-          <form onSubmit={handleSaveEdits} className="mt-6 space-y-4 border-t border-slate-800 pt-6">
-            <h2 className="text-base font-semibold text-slate-100">Edit task</h2>
+          <form onSubmit={handleSaveEdits} className="mt-6 space-y-4 border-t border-slate-200 pt-6 dark:border-slate-800">
+            <h2 className="text-base font-semibold font-heading text-slate-900 dark:text-slate-100">Edit task</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-slate-400">Title</label>
+                <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">Title</label>
                 <input
                   type="text"
                   name="title"
                   value={editForm.title}
                   onChange={handleEditChange}
+                  className="w-full rounded-lg bg-white border border-slate-300 text-slate-900 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-950/50 dark:border-slate-800/80 dark:text-slate-200"
                   required
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-slate-400">Description</label>
+                <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">Description</label>
                 <textarea
                   name="description"
                   rows={3}
                   value={editForm.description}
                   onChange={handleEditChange}
+                  className="w-full rounded-lg bg-white border border-slate-300 text-slate-900 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-950/50 dark:border-slate-800/80 dark:text-slate-200"
                   required
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-slate-400">Category</label>
+                <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">Category</label>
                 <select
                   name="category"
                   value={editForm.category}
                   onChange={handleEditChange}
+                  className="w-full rounded-lg bg-white border border-slate-300 text-slate-900 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-950/50 dark:border-slate-800/80 dark:text-slate-200"
                 >
                   <option value="paid">Paid</option>
                   <option value="learning">Learning</option>
@@ -511,20 +554,22 @@ const TaskDetails = () => {
                   name="inter_college_only"
                   checked={editForm.inter_college_only}
                   onChange={handleEditChange}
+                  className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900"
                 />
-                <label className="text-sm text-slate-300">Inter-College Work only</label>
+                <label className="text-sm text-slate-700 dark:text-slate-300">Inter-College Work only</label>
               </div>
               <div>
-                <label className="mb-1 block text-xs text-slate-400">Deadline</label>
+                <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">Deadline</label>
                 <input
                   type="datetime-local"
                   name="deadline"
                   value={editForm.deadline}
                   onChange={handleEditChange}
+                  className="w-full rounded-lg bg-white border border-slate-300 text-slate-900 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-950/50 dark:border-slate-800/80 dark:text-slate-200"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-slate-400">Reward (₹)</label>
+                <label className="mb-1 block text-xs text-slate-500 dark:text-slate-400">Reward (₹)</label>
                 <input
                   type="number"
                   name="reward"
@@ -532,6 +577,7 @@ const TaskDetails = () => {
                   step="0.01"
                   value={editForm.reward}
                   onChange={handleEditChange}
+                  className="w-full rounded-lg bg-white border border-slate-300 text-slate-900 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:bg-slate-950/50 dark:border-slate-800/80 dark:text-slate-200"
                 />
               </div>
             </div>
@@ -546,26 +592,26 @@ const TaskDetails = () => {
         )}
 
         {!proposalLoading && proposal && !isOwner && (
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-50">Generated proposal</h3>
+              <h3 className="text-sm font-semibold font-heading text-slate-900 dark:text-slate-50">Generated proposal</h3>
               <button
                 type="button"
                 onClick={() => navigator.clipboard?.writeText(proposal)}
-                className="flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
+                className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-100 dark:border-slate-700 dark:bg-transparent dark:text-slate-200 dark:hover:bg-slate-800 dark:shadow-none"
               >
                 <Copy className="h-3.5 w-3.5" />
                 Copy
               </button>
             </div>
-            <textarea readOnly rows={6} value={proposal} className="rounded-lg" />
+            <textarea readOnly rows={6} value={proposal} className="w-full rounded-lg bg-white border border-slate-300 text-slate-700 px-3 py-2 text-sm dark:bg-slate-950/50 dark:border-slate-800/80 dark:text-slate-300 custom-scrollbar" />
           </div>
         )}
 
         {!recLoading && recommendedFreelancers.length > 0 && isOwner && (
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-50">
-              <Sparkles className="h-4 w-4 text-primary-400" />
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold font-heading text-slate-900 dark:text-slate-50">
+              <Sparkles className="h-4 w-4 text-primary-500 dark:text-primary-400" />
               Recommended freelancers
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -573,17 +619,17 @@ const TaskDetails = () => {
                 <Link
                   key={rec.freelancer.id}
                   to={`/profile/${rec.freelancer.id}`}
-                  className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/40 p-3 transition-colors hover:bg-slate-800/50"
+                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950/40 dark:hover:bg-slate-800/50 dark:shadow-none"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-100">
+                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">
                       {rec.freelancer.email}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       {rec.freelancer.skills || "No skills listed"}
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-primary-600/20 px-2 py-0.5 text-xs font-semibold text-primary-300">
+                  <span className="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-600 dark:bg-primary-600/20 dark:text-primary-300">
                     {rec.match_percentage}%
                   </span>
                 </Link>

@@ -29,6 +29,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+    name = Column(String, nullable=True)
+    bio = Column(Text, nullable=True)
     phone = Column(String, nullable=True)
     skills = Column(String, nullable=True)
     college_name = Column(String, nullable=True)

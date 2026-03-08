@@ -12,6 +12,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    name: Optional[str] = None
     phone: Optional[str] = None
     skills: Optional[str] = None
     college_name: Optional[str] = None
@@ -24,12 +25,21 @@ class UserLogin(BaseModel):
 
 class UserOut(UserBase):
     id: int
+    name: Optional[str] = None
+    bio: Optional[str] = None
     phone: Optional[str] = None
     skills: Optional[str] = None
     college_name: Optional[str] = None
 
     class Config:
         orm_mode = True
+
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    bio: Optional[str] = None
+    skills: Optional[str] = None
+    phone: Optional[str] = None
 
 
 class TaskBase(BaseModel):
@@ -86,7 +96,9 @@ class TaskContacts(BaseModel):
 
 class UserPublic(BaseModel):
     id: int
+    name: Optional[str] = None
     email: EmailStr
+    bio: Optional[str] = None
     skills: Optional[str] = None
 
 
@@ -102,6 +114,14 @@ class RecommendedTaskOut(BaseModel):
 
 class ProposalOut(BaseModel):
     proposal: str
+
+
+class UserStatsOut(BaseModel):
+    total_posted: int
+    total_completed: int
+    total_accepted: int
+    posted_tasks: list[TaskOut]
+    accepted_tasks: list[TaskOut]
 
 
 

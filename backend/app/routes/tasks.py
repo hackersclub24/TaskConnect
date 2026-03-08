@@ -285,6 +285,33 @@ def accept_task(
     return task
 
 
+@router.post("/{task_id}/cancel-acceptance", response_model=schemas.TaskOut)
+def cancel_task_acceptance(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    if task.status != models.TaskStatus.accepted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Task is not currently accepted",
+        )
+    if task.owner_id != current_user.id and task.assigned_to != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to cancel this task's acceptance",
+        )
+    
+    task.status = models.TaskStatus.open
+    task.assigned_to = None
+    db.commit()
+    db.refresh(task)
+    return task
+
+
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(
     task_id: int,

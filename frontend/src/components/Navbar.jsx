@@ -9,8 +9,11 @@ import {
   Moon,
   MessageCircle,
   GraduationCap,
-  Star
+  Star,
+  User
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { fetchCurrentUser } from "../services/api";
 
 const Navbar = ({ theme = "dark", onToggleTheme }) => {
   const navigate = useNavigate();
@@ -23,8 +26,24 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
 
   const isDark = theme === "dark";
 
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  useEffect(() => {
+    if (token) {
+      const getMe = async () => {
+        try {
+          const { data } = await fetchCurrentUser();
+          setCurrentUserId(data.id);
+        } catch {
+          // fail silently
+        }
+      };
+      getMe();
+    }
+  }, [token]);
+
   return (
-    <nav className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-md supports-[backdrop-filter]:bg-slate-950/80">
+    <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 dark:border-slate-800/80 dark:bg-slate-950/95 dark:supports-[backdrop-filter]:bg-slate-950/80 transition-colors duration-300">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link
           to="/"
@@ -34,10 +53,10 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
             <GraduationCap className="h-5 w-5" strokeWidth={2.5} />
           </div>
           <div className="hidden flex-col leading-tight sm:flex">
-            <span className="bg-gradient-to-r from-primary-400 via-sky-400 to-emerald-400 bg-clip-text text-lg font-semibold text-transparent">
+            <span className="bg-gradient-to-r from-primary-600 via-sky-500 to-emerald-500 dark:from-primary-400 dark:via-sky-400 dark:to-emerald-400 bg-clip-text text-lg font-bold text-transparent font-heading">
               Skillstreet
             </span>
-            <span className="text-[11px] font-medium text-slate-400">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
               Built for busy college deadlines
             </span>
           </div>
@@ -47,7 +66,7 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
           <button
             type="button"
             onClick={onToggleTheme}
-            className="flex items-center gap-1.5 rounded-full border border-slate-700/70 bg-slate-900/60 px-2.5 py-1.5 text-slate-200 transition-colors hover:bg-slate-800 sm:px-3"
+            className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700/70 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:bg-slate-800 sm:px-3"
             aria-label="Toggle theme"
           >
             {isDark ? (
@@ -64,7 +83,7 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
             <>
               <Link
                 to="/"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-800 hover:text-slate-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-slate-50"
               >
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Dashboard</span>
@@ -76,23 +95,32 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
                 <PlusCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Create Task</span>
               </Link>
+              {currentUserId && (
+                <Link
+                  to={`/profile/${currentUserId}`}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">My Profile</span>
+                </Link>
+              )}
               <Link
                 to="/reviews"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50"
               >
                 <Star className="h-4 w-4" />
                 <span className="hidden sm:inline">Reviews</span>
               </Link>
               <Link
                 to="/contact"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50"
               >
                 <MessageCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Contact</span>
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50"
               >
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Logout</span>
@@ -102,21 +130,21 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
             <>
               <Link
                 to="/reviews"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50"
               >
                 <Star className="h-4 w-4" />
                 <span className="hidden sm:inline">Reviews</span>
               </Link>
               <Link
                 to="/contact"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50"
               >
                 <MessageCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Contact</span>
               </Link>
               <Link
                 to="/login"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-slate-50"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50"
               >
                 <LogIn className="h-4 w-4" />
                 <span className="hidden sm:inline">Login</span>
