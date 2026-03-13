@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
@@ -55,6 +55,70 @@ def list_my_tasks(
         .all()
     )
     return tasks
+
+
+@router.get("/urgent", response_model=List[schemas.UrgentTaskOut])
+def get_urgent_tasks(
+    db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_current_user_optional),
+):
+    """Get all urgent tasks sorted by nearest deadline."""
+    now = datetime.utcnow()
+    
+    q = db.query(models.Task).options(joinedload(models.Task.owner)).filter(
+        models.Task.status == models.TaskStatus.open
+    )
+    tasks = q.all()
+    
+    # Filter inter_college_only as we do in list_tasks
+    if current_user and current_user.college_name:
+        tasks = [
+            t for t in tasks
+            if not t.inter_college_only or (t.owner and t.owner.college_name == current_user.college_name)
+        ]
+    elif current_user is None:
+        tasks = [t for t in tasks if not t.inter_college_only]
+        
+    urgent_tasks_response = []
+    
+    for t in tasks:
+        is_urgent_time = False
+        hours_remaining = 24.0 # Default for priority calc if no deadline
+        
+        if t.deadline:
+            delta = t.deadline - now
+            if timedelta(0) < delta <= timedelta(hours=24):
+                is_urgent_time = True
+                hours_remaining = delta.total_seconds() / 3600.0
+            elif delta <= timedelta(0):
+                # deadline passed
+                pass
+        
+        is_user_marked_urgent = t.is_urgent
+        
+        if is_urgent_time or is_user_marked_urgent:
+            difficulty_level = 1
+            priority_score = (hours_remaining * -1) + difficulty_level
+            urgency_status = "Critical (Time)" if is_urgent_time else "High Priority (Manual)"
+            
+            urgent_tasks_response.append({
+                "task_id": t.id,
+                "title": t.title,
+                "description": t.description,
+                "deadline": t.deadline,
+                "posted_by": t.owner.name if t.owner and t.owner.name else t.owner.email if t.owner else "Unknown",
+                "required_skill": t.category,
+                "urgency_status": urgency_status,
+                "priority_score": priority_score,
+                "raw_deadline": t.deadline
+            })
+            
+    # Sort by nearest deadline first
+    urgent_tasks_response.sort(
+        key=lambda x: x["raw_deadline"] if x["raw_deadline"] else datetime.max
+    )
+    
+    return [schemas.UrgentTaskOut(**u) for u in urgent_tasks_response]
 
 
 @router.get("/{task_id}/contacts", response_model=schemas.TaskContacts)
@@ -189,6 +253,7 @@ def create_task(
             deadline = None
     category = task_in.category if task_in.category else "paid"
     inter_college_only = task_in.inter_college_only or False
+    is_urgent = task_in.is_urgent or False
     task = models.Task(
         title=task_in.title,
         description=task_in.description,
@@ -197,6 +262,7 @@ def create_task(
         owner_id=current_user.id,
         category=category,
         inter_college_only=inter_college_only,
+        is_urgent=is_urgent,
     )
     db.add(task)
     db.commit()
@@ -257,6 +323,19 @@ def update_task_status(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to change the status of this task",
         )
+
+    # Leaderboard update logic: only trigger if changing to completed
+    if status_in.status == models.TaskStatus.completed and task.status != models.TaskStatus.completed:
+        if task.assigned_to:
+            assigned_user = db.query(models.User).filter(models.User.id == task.assigned_to).first()
+            if assigned_user:
+                assigned_user.tasks_completed += 1
+                if task.deadline and datetime.utcnow() <= task.deadline:
+                    assigned_user.tasks_completed_on_time += 1
+                
+                # Import here to avoid circular dependencies
+                from ..services.leaderboard import update_user_score
+                update_user_score(db, assigned_user)
 
     task.status = status_in.status
     db.commit()

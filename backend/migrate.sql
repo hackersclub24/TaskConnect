@@ -9,6 +9,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS college_name VARCHAR(255);
 -- 2. Task columns (if not exists)
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'paid';
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS inter_college_only BOOLEAN DEFAULT FALSE;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS is_urgent BOOLEAN DEFAULT FALSE;
 
 -- 3. Set default for existing tasks
 UPDATE tasks SET category = 'paid' WHERE category IS NULL;

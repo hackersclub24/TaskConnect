@@ -32,6 +32,13 @@ def create_review(
     reviewee = db.query(models.User).filter(models.User.id == review_in.reviewee_id).first()
     if not reviewee:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+    # Leaderboard update logic
+    reviewee.total_ratings += 1
+    reviewee.rating_sum += review_in.rating
+    from ..services.leaderboard import update_user_score
+    update_user_score(db, reviewee)
+    
     review = models.Review(
         reviewer_id=current_user.id,
         reviewee_id=review_in.reviewee_id,

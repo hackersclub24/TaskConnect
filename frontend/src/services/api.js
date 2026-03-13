@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
-  // import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+  // import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL
@@ -24,6 +24,8 @@ export const fetchCurrentUser = () => api.get("/auth/me");
 
 // Tasks - category: paid|learning|collaboration, same_college_only: bool
 export const fetchTasks = (params = {}) => api.get("/tasks/", { params });
+
+export const fetchUrgentTasks = () => api.get("/tasks/urgent");
 
 export const fetchMyTasks = () => api.get("/tasks/mine");
 
@@ -61,6 +63,9 @@ export const fetchUserStats = (userId) => api.get(`/users/${userId}/stats`);
 // Reviews
 export const createReview = (data) => api.post("/reviews/", data);
 export const fetchUserReviews = (userId) => api.get(`/reviews/user/${userId}`);
+
+// Leaderboard
+export const fetchLeaderboard = (timeframe = "global") => api.get(`/leaderboard?timeframe=${timeframe}`);
 
 // Contact / Feedback
 export const submitContactFeedback = (data) => api.post("/contact/", data);

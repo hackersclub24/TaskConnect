@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Calendar, IndianRupee, BookOpen, Users, Briefcase, Building2 } from "lucide-react";
+import { FileText, Calendar, IndianRupee, BookOpen, Users, Briefcase, Building2, AlertCircle } from "lucide-react";
 import { createTask } from "../services/api";
 
 const CATEGORIES = [
@@ -19,7 +19,8 @@ const CreateTask = () => {
     deadline: "",
     reward: "",
     category: "paid",
-    inter_college_only: false
+    inter_college_only: false,
+    is_urgent: false
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +48,8 @@ const CreateTask = () => {
         reward: form.reward ? Number(form.reward) : null,
         deadline: form.deadline || null,
         category: form.category,
-        inter_college_only: form.inter_college_only
+        inter_college_only: form.inter_college_only,
+        is_urgent: form.is_urgent
       };
       await createTask(payload);
       navigate("/");
@@ -146,6 +148,17 @@ const CreateTask = () => {
               />
               <Building2 className="h-4 w-4 text-slate-400" />
               <span className="text-sm text-slate-300">Inter-College Work only</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 transition-colors hover:bg-red-500/20">
+              <input
+                type="checkbox"
+                name="is_urgent"
+                checked={form.is_urgent}
+                onChange={handleChange}
+                className="h-4 w-4 rounded border-red-500/50 text-red-500 focus:ring-red-500"
+              />
+              <AlertCircle className="h-4 w-4 text-red-400" />
+              <span className="text-sm text-red-200">Mark as Urgent Task</span>
             </label>
           </div>
 

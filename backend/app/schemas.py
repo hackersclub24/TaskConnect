@@ -49,6 +49,7 @@ class TaskBase(BaseModel):
     reward: Optional[float] = None
     category: Optional[str] = "paid"
     inter_college_only: Optional[bool] = False
+    is_urgent: Optional[bool] = False
 
 
 class TaskCreate(TaskBase):
@@ -85,6 +86,21 @@ class TaskOut(TaskBase):
     created_at: datetime
     owner: Optional[TaskOwnerBrief] = None
 
+    is_urgent: Optional[bool] = False
+
+    class Config:
+        orm_mode = True
+
+class UrgentTaskOut(BaseModel):
+    task_id: int
+    title: str
+    description: str
+    deadline: Optional[datetime] = None
+    posted_by: str
+    required_skill: Optional[str] = None
+    urgency_status: str
+    priority_score: Optional[float] = None
+    
     class Config:
         orm_mode = True
 
@@ -100,6 +116,21 @@ class UserPublic(BaseModel):
     email: EmailStr
     bio: Optional[str] = None
     skills: Optional[str] = None
+
+
+class LeaderboardUserOut(BaseModel):
+    id: int
+    name: Optional[str] = None
+    email: EmailStr
+    rank: int
+    tasks_completed: int
+    average_rating: float
+    leaderboard_score: float
+
+    class Config:
+        from_attributes = True
+
+
 
 
 class RecommendedFreelancerOut(BaseModel):

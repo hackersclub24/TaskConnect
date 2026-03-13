@@ -35,6 +35,15 @@ class User(Base):
     skills = Column(String, nullable=True)
     college_name = Column(String, nullable=True)
 
+    # Leaderboard ranking fields
+    tasks_completed = Column(Integer, default=0, nullable=False)
+    tasks_completed_on_time = Column(Integer, default=0, nullable=False)
+    rating_sum = Column(Integer, default=0, nullable=False)
+    total_ratings = Column(Integer, default=0, nullable=False)
+    average_rating = Column(Numeric(scale=2), default=0.0, nullable=False)
+    on_time_completion_rate = Column(Numeric(scale=2), default=0.0, nullable=False)
+    leaderboard_score = Column(Numeric(scale=2), default=0.0, nullable=False, index=True)
+
     owned_tasks = relationship(
         "Task",
         back_populates="owner",
@@ -70,6 +79,7 @@ class Task(Base):
     status = Column(Enum(TaskStatus), default=TaskStatus.open, nullable=False)
     category = Column(String(50), default="paid", nullable=False)
     inter_college_only = Column(Boolean, default=False, nullable=False)
+    is_urgent = Column(Boolean, default=False, nullable=False)
 
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PlusCircle, Filter, GraduationCap, Sparkles } from "lucide-react";
-import { fetchCurrentUser, fetchRecommendedTasks, fetchTasks } from "../services/api";
+import { fetchCurrentUser, fetchRecommendedTasks, fetchTasks, fetchUrgentTasks } from "../services/api";
 import TaskCard from "../components/TaskCard";
 
 const CATEGORY_TABS = [
@@ -14,6 +14,7 @@ const CATEGORY_TABS = [
 const Dashboard = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
+  const [urgentTasks, setUrgentTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -36,11 +37,13 @@ const Dashboard = () => {
         if (categoryFilter) params.category = categoryFilter;
         if (sameCollegeOnly) params.same_college_only = true;
 
-        const [{ data: tasksData }, { data: meData }] = await Promise.all([
+        const [{ data: tasksData }, { data: meData }, { data: urgentTasksData }] = await Promise.all([
           fetchTasks(params),
-          fetchCurrentUser()
+          fetchCurrentUser(),
+          fetchUrgentTasks()
         ]);
         setTasks(tasksData);
+        setUrgentTasks(urgentTasksData);
         setCurrentUser(meData);
         try {
           const { data: recData } = await fetchRecommendedTasks(meData.id);
@@ -59,9 +62,11 @@ const Dashboard = () => {
     load();
   }, [navigate, token, categoryFilter, sameCollegeOnly]);
 
-  const filteredTasks = tasks.filter((t) =>
-    statusFilter === "all" ? true : t.status === statusFilter
-  );
+  const filteredTasks = statusFilter === "urgent"
+    ? urgentTasks
+    : tasks.filter((t) =>
+        statusFilter === "all" ? true : t.status === statusFilter
+      );
 
   return (
     <div className="py-6 sm:py-8">
@@ -146,14 +151,16 @@ const Dashboard = () => {
               <span className="font-medium text-slate-700 dark:text-slate-300">From my college only</span>
             </label>
           )}
-          <div className="flex items-center gap-1.5">
-            {["all", "open", "accepted", "completed"].map((s) => (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {["all", "urgent", "open", "accepted", "completed"].map((s) => (
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
-                className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
+                className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
                   statusFilter === s
-                    ? s === "open"
+                    ? s === "urgent"
+                      ? "bg-red-100 text-red-800 dark:bg-red-500/90 dark:text-white ring-1 ring-red-500/50 shadow-sm"
+                    : s === "open"
                       ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-600/90 dark:text-white"
                       : s === "accepted"
                       ? "bg-amber-100 text-amber-800 dark:bg-amber-500/90 dark:text-slate-950"
