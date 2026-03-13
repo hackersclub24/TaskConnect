@@ -1,27 +1,27 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+# # Byte-compiled / optimized / DLL files
+# __pycache__/
+# *.py[cod]
+# *$py.class
 
-# Virtual environments
-venv/
-env/
-.env/
-.venv/
-ENV/
+# # Virtual environments
+# venv/
+# env/
+# .env/
+# .venv/
+# ENV/
 
-# Environment variables
-.env
+# # Environment variables
+# .env
 
-# SQLite databases
-*.sqlite3
-*.sqlite
+# # SQLite databases
+# *.sqlite3
+# *.sqlite
 
-# IDEs
-.vscode/
-.idea/
+# # IDEs
+# .vscode/
+# .idea/
 
-# Alembic / Logs
-alembic_error.txt
-alembic_out.txt
-verify_output.txt
+# # Alembic / Logs
+# alembic_error.txt
+# alembic_out.txt
+# verify_output.txt
