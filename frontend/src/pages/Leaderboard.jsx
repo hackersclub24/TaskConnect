@@ -6,38 +6,28 @@ const Leaderboard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filter, setFilter] = useState("all");
+  const isAuthenticated = !!localStorage.getItem("token");
 
   useEffect(() => {
     const loadLeaderboard = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const { data } = await fetchLeaderboard();
+        const { data } = await fetchLeaderboard("global", filter);
         setUsers(data);
       } catch (err) {
         console.error("Failed to load leaderboard:", err);
-        setError("Failed to load leaderboard. Please try again later.");
+        setError(
+          err.response?.data?.detail || "Failed to load leaderboard. Please try again later."
+        );
       } finally {
         setLoading(false);
       }
     };
 
     loadLeaderboard();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center p-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-600 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400">
-        <p>{error}</p>
-      </div>
-    );
-  }
+  }, [filter]);
 
   return (
     <div className="space-y-6">
@@ -50,6 +40,35 @@ const Leaderboard = () => {
           <p className="mt-1 text-slate-600 dark:text-slate-400">
             See who's delivering the best results on Skillstreet.
           </p>
+        </div>
+        
+        <div className="flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <button
+            onClick={() => setFilter("all")}
+            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors sm:flex-none ${
+              filter === "all"
+                ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white"
+                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+            }`}
+          >
+            Global
+          </button>
+          <button
+            onClick={() => {
+              if (isAuthenticated) setFilter("college");
+            }}
+            disabled={!isAuthenticated}
+            title={!isAuthenticated ? "Login to see college leaderboard" : ""}
+            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors sm:flex-none ${
+              !isAuthenticated
+                ? "cursor-not-allowed opacity-50"
+                : filter === "college"
+                ? "bg-primary-100 text-primary-900 dark:bg-primary-900/40 dark:text-primary-100"
+                : "text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400"
+            }`}
+          >
+            My College
+          </button>
         </div>
       </div>
 

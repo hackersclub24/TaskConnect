@@ -64,7 +64,8 @@ export const createReview = (data) => api.post("/reviews/", data);
 export const fetchUserReviews = (userId) => api.get(`/reviews/user/${userId}`);
 
 // Leaderboard
-export const fetchLeaderboard = (timeframe = "global") => api.get(`/leaderboard?timeframe=${timeframe}`);
+export const fetchLeaderboard = (timeframe = "global", filter = "all") => 
+  api.get(`/leaderboard?timeframe=${timeframe}&filter=${filter}`);
 
 // Contact / Feedback
 export const submitContactFeedback = (data) => api.post("/contact/", data);
