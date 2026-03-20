@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Phone, Award, Lock, Building2 } from "lucide-react";
 import { registerUser } from "../services/api";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -135,6 +136,34 @@ const Register = () => {
             {loading ? "Creating account..." : "Register"}
           </button>
         </form>
+
+        <div className="my-4 flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500">
+          <span className="h-px flex-1 bg-slate-700" />
+          or sign up with
+          <span className="h-px flex-1 bg-slate-700" />
+        </div>
+
+        <GoogleLoginButton
+          onSuccess={({ backendResponse }) => {
+            setError("");
+            setSuccess(
+              "Google account connected. You can add skills and bio from Profile."
+            );
+
+            const userId = backendResponse?.user?.id;
+            if (userId) {
+              navigate(`/profile/${userId}`);
+              return;
+            }
+
+            navigate("/");
+          }}
+          onError={(message) => {
+            setSuccess("");
+            setError(message);
+          }}
+        />
+
         <p className="mt-5 text-center text-sm text-slate-400">
           Already have an account?{" "}
           <Link to="/login" className="font-medium text-primary-400 hover:underline">
