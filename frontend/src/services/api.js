@@ -24,8 +24,28 @@ export const registerUser = (data) => api.post("/auth/register", data);
 
 export const loginUser = (data) => api.post("/auth/login", data);
 
-export const loginWithGoogleToken = (idToken) =>
-  axios.post(GOOGLE_AUTH_URL, { token: idToken });
+export const loginWithGoogleToken = async (idToken) => {
+  const fallbackUrl = `${API_ORIGIN}/api/auth/google`;
+  const urlsToTry = [GOOGLE_AUTH_URL, fallbackUrl].filter(
+    (url, index, arr) => url && arr.indexOf(url) === index
+  );
+
+  let lastError = null;
+
+  for (const url of urlsToTry) {
+    try {
+      return await axios.post(url, { token: idToken });
+    } catch (err) {
+      lastError = err;
+      // If backend responded (4xx/5xx), don't retry a different URL.
+      if (axios.isAxiosError(err) && err.response) {
+        throw err;
+      }
+    }
+  }
+
+  throw lastError;
+};
 
 export const fetchCurrentUser = () => api.get("/auth/me");
 
