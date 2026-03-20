@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, engine
 from .routes import auth as auth_routes
+from .routes import google_auth as google_auth_routes
 from .routes import tasks as task_routes
 from .routes import users as user_routes
 from .routes import reviews as review_routes
@@ -39,6 +40,7 @@ app.add_middleware(
 
 
 app.include_router(auth_routes.router, prefix="/api/auth", tags=["auth"])
+app.include_router(google_auth_routes.router)
 app.include_router(task_routes.router, prefix="/api/tasks", tags=["tasks"])
 app.include_router(user_routes.router, prefix="/api/users", tags=["users"])
 app.include_router(review_routes.router, prefix="/api/reviews", tags=["reviews"])

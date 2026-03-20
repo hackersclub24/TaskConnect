@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../services/api";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -124,6 +125,23 @@ const Login = () => {
                 {loading ? "Signing in..." : "Login"}
               </button>
             </form>
+
+            <div className="my-4 flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500">
+              <span className="h-px flex-1 bg-slate-700" />
+              or continue with
+              <span className="h-px flex-1 bg-slate-700" />
+            </div>
+
+            <GoogleLoginButton
+              onSuccess={() => {
+                setError("");
+                navigate("/");
+              }}
+              onError={(message) => {
+                setError(message);
+              }}
+            />
+
             <p className="mt-4 text-center text-xs text-slate-400">
               Don&apos;t have an account?{" "}
               <Link to="/register" className="font-medium text-primary-400">

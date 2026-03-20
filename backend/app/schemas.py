@@ -165,6 +165,17 @@ class TokenData(BaseModel):
     user_id: Optional[int] = None
 
 
+class GoogleTokenIn(BaseModel):
+    token: str
+
+
+class GoogleAuthResponse(BaseModel):
+    success: bool = True
+    user: UserOut
+    access_token: str
+    token_type: str = "bearer"
+
+
 # --- Review schemas ---
 class ReviewCreate(BaseModel):
     reviewee_id: int

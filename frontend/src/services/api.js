@@ -3,9 +3,14 @@ import axios from "axios";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
 
+const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
+
 const api = axios.create({
   baseURL: API_BASE_URL
 });
+
+const GOOGLE_AUTH_URL =
+  import.meta.env.VITE_GOOGLE_AUTH_URL || `${API_ORIGIN}/api/auth/google`;
   
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -18,6 +23,9 @@ api.interceptors.request.use((config) => {
 export const registerUser = (data) => api.post("/auth/register", data);
 
 export const loginUser = (data) => api.post("/auth/login", data);
+
+export const loginWithGoogleToken = (idToken) =>
+  axios.post(GOOGLE_AUTH_URL, { token: idToken });
 
 export const fetchCurrentUser = () => api.get("/auth/me");
 
