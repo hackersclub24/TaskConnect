@@ -144,6 +144,8 @@ const Register = () => {
         </div>
 
         <GoogleLoginButton
+          idleText="Continue with Google"
+          loadingText="Connecting Google..."
           onSuccess={({ backendResponse }) => {
             setError("");
             setSuccess(

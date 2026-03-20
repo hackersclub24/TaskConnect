@@ -133,6 +133,8 @@ const Login = () => {
             </div>
 
             <GoogleLoginButton
+              idleText="Sign in with Google"
+              loadingText="Signing in with Google..."
               onSuccess={() => {
                 setError("");
                 navigate("/");
