@@ -5,6 +5,7 @@ import os
 import shutil
 from pathlib import Path
 from datetime import datetime
+from urllib.parse import urlparse
 
 from .. import models, schemas
 from ..auth import get_current_user
@@ -56,9 +57,22 @@ def upload_profile_image(
         )
 
     # Upload to Cloudinary (required - no local fallback on Render)
-    cloudinary_url = "https://api.cloudinary.com/v1_1/{}/image/upload".format(
-        os.getenv("CLOUDINARY_CLOUD_NAME")
-    )
+    # Parse CLOUDINARY_URL to extract cloud_name
+    cloudinary_url_env = os.getenv("CLOUDINARY_URL", "")
+    if cloudinary_url_env.startswith("cloudinary://"):
+        # Extract cloud_name from URL: cloudinary://key:secret@cloud_name
+        parsed = urlparse(cloudinary_url_env)
+        cloud_name = parsed.hostname
+    else:
+        cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME")
+    
+    if not cloud_name:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Cloudinary cloud name not configured"
+        )
+    
+    cloudinary_upload_url = f"https://api.cloudinary.com/v1_1/{cloud_name}/image/upload"
 
     files_data = {
         "file": (file.filename, content, file.content_type)
@@ -69,7 +83,7 @@ def upload_profile_image(
     }
 
     try:
-        response = requests.post(cloudinary_url, files=files_data, data=data, timeout=10)
+        response = requests.post(cloudinary_upload_url, files=files_data, data=data, timeout=10)
         
         # Log the response for debugging
         print(f"Cloudinary response status: {response.status_code}")
