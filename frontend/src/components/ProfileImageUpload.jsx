@@ -1,7 +1,17 @@
 import { useState, useRef } from "react";
 import { Upload, X } from "lucide-react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
+const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
+
+const toAbsoluteImageUrl = (url) => {
+  if (!url) return url;
+  if (url.startsWith("/")) {
+    return `${API_ORIGIN}${url}`;
+  }
+  return url;
+};
 
 const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
   const [loading, setLoading] = useState(false);
@@ -73,11 +83,7 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
         throw new Error("No image URL returned from server");
       }
 
-      // Convert relative URLs to absolute
-      if (imageUrl.startsWith("/")) {
-        imageUrl = `http://127.0.0.1:8000${imageUrl}`;
-        console.log("Converted to absolute URL:", imageUrl);
-      }
+      imageUrl = toAbsoluteImageUrl(imageUrl);
 
       console.log("Image URL set to:", imageUrl);
 
@@ -103,7 +109,7 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
       <div className="relative w-32 h-32">
         {currentImageUrl ? (
           <img
-            src={currentImageUrl.startsWith("/") ? `http://127.0.0.1:8000${currentImageUrl}` : currentImageUrl}
+            src={toAbsoluteImageUrl(currentImageUrl)}
             alt={userName}
             className="w-32 h-32 rounded-full object-cover border-4 border-primary-200 dark:border-primary-800"
           />
