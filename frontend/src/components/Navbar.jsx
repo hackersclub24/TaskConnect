@@ -11,10 +11,12 @@ import {
   GraduationCap,
   Star,
   User,
-  Trophy
+  Trophy,
+  Coins
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { fetchCurrentUser } from "../services/api";
+import { fetchCurrentUser, getTokenBalance } from "../services/api";
+import PremiumFeaturesModal from "./PremiumFeaturesModal";
 
 const Navbar = ({ theme = "dark", onToggleTheme }) => {
   const navigate = useNavigate();
@@ -47,6 +49,11 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
     return null;
   });
 
+  const [tokenBalance, setTokenBalance] = useState(null);
+  const [isPremium, setIsPremium] = useState(false);
+
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
   useEffect(() => {
     if (token && !currentUserId) {
       const getMe = async () => {
@@ -61,8 +68,24 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
     }
   }, [token, currentUserId]);
 
+  useEffect(() => {
+    if (token) {
+      const fetchTokens = async () => {
+        try {
+          const { data } = await getTokenBalance();
+          setTokenBalance(data.balance);
+          setIsPremium(data.is_premium || false);
+        } catch {
+          // fail silently
+        }
+      };
+      fetchTokens();
+    }
+  }, [token]);
+
   return (
-    <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 dark:border-slate-800/80 dark:bg-slate-950/95 dark:supports-[backdrop-filter]:bg-slate-950/80 transition-colors duration-300">
+    <>
+      <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 dark:border-slate-800/80 dark:bg-slate-950/95 dark:supports-[backdrop-filter]:bg-slate-950/80 transition-colors duration-300">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link
           to="/"
@@ -97,6 +120,16 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
               {isDark ? "Dark" : "Light"}
             </span>
           </button>
+
+          {token && tokenBalance !== null && (
+            <button
+              onClick={() => setShowPremiumModal(true)}
+              className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-700 hover:bg-amber-100 transition-colors dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+            >
+              <Coins className="h-4 w-4" />
+              <span className="hidden text-xs font-semibold sm:inline">{tokenBalance}</span>
+            </button>
+          )}
 
           {token ? (
             <>
@@ -195,7 +228,15 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
           )}
         </div>
       </div>
-    </nav>
+      </nav>
+
+      <PremiumFeaturesModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        tokenBalance={tokenBalance}
+        isPremium={isPremium}
+      />
+    </>
   );
 };
 

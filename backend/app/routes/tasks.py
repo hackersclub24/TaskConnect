@@ -22,11 +22,32 @@ def list_tasks(
     same_college_only: Optional[bool] = Query(None, description="Show only tasks from my college"),
     current_user: Optional[models.User] = Depends(get_current_user_optional),
 ):
-    """List all tasks with optional category and college filters."""
+    """
+    List all tasks with optional category and college filters.
+
+    Premium users see tasks posted up to 5 minutes ago.
+    Non-premium users see tasks posted at least 5 minutes ago.
+    """
     q = db.query(models.Task).options(joinedload(models.Task.owner)).order_by(models.Task.created_at.desc())
     if category and category in ("paid", "learning", "collaboration"):
         q = q.filter(models.Task.category == category)
     tasks = q.all()
+
+    # Filter by early access: premium users see newer tasks
+    now = datetime.utcnow()
+    cutoff_time = now - timedelta(minutes=5)
+
+    # Mark tasks that are premium early access
+    for task in tasks:
+        task.premium_early_access = task.created_at >= cutoff_time
+
+    if current_user and current_user.is_premium:
+        # Premium: show all tasks including early access
+        pass
+    else:
+        # Non-premium: only show tasks posted at least 5 minutes ago
+        tasks = [t for t in tasks if t.created_at < cutoff_time]
+
     # Filter: inter_college_only tasks - hide from users from other colleges
     if current_user and current_user.college_name:
         tasks = [

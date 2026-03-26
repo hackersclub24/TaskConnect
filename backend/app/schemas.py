@@ -30,6 +30,8 @@ class UserOut(UserBase):
     phone: Optional[str] = None
     skills: Optional[str] = None
     college_name: Optional[str] = None
+    premium_tokens: int = 0
+    is_premium: bool = False
 
     class Config:
         orm_mode = True
@@ -87,6 +89,7 @@ class TaskOut(TaskBase):
     owner: Optional[TaskOwnerBrief] = None
 
     is_urgent: Optional[bool] = False
+    premium_early_access: Optional[bool] = False
 
     class Config:
         orm_mode = True
@@ -254,4 +257,22 @@ class ContactFeedbackOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+# --- Token/Premium schemas ---
+class TokenBalanceOut(BaseModel):
+    balance: int
+    is_premium: bool = False
+
+
+class TokenDeductionRequest(BaseModel):
+    tokens_amount: int
+    feature_name: str
+
+
+class PremiumFeatureGateOut(BaseModel):
+    allowed: bool
+    current_tokens: int
+    required_tokens: int
+    message: Optional[str] = None
 

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Calendar, IndianRupee, Building2, BookOpen, Users, AlertCircle } from "lucide-react";
+import { Calendar, IndianRupee, Building2, BookOpen, Users, AlertCircle, Crown } from "lucide-react";
 
 // Status badge colors
 const statusColors = {
@@ -74,6 +74,12 @@ const TaskCard = ({ task, currentUserCollege, showCollegeBadge }) => {
           <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 shadow-sm shadow-red-500/10 dark:border-red-500/40 dark:bg-red-500/15 dark:text-red-400">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             URGENT
+          </span>
+        )}
+        {task.premium_early_access && (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700 shadow-sm shadow-yellow-500/10 dark:border-yellow-500/40 dark:bg-yellow-500/15 dark:text-yellow-300">
+            <Crown className="h-3.5 w-3.5 shrink-0" />
+            PREMIUM ACCESS
           </span>
         )}
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Star, Building2, Award, Mail, Edit2, Save, X, Briefcase, CheckCircle, Clock } from "lucide-react";
+import { Star, Building2, Award, Mail, Edit2, Save, X, Briefcase, CheckCircle, Clock, Coins, Crown } from "lucide-react";
 import { fetchUserById, fetchUserReviews, fetchUserStats, updateUserProfile, fetchCurrentUser } from "../services/api";
 
 const Profile = () => {
@@ -282,6 +282,18 @@ const Profile = () => {
                   </div>
                   <span className="text-2xl font-bold font-heading text-slate-900 dark:text-slate-50">{stats.total_accepted}</span>
                 </div>
+
+                {user.is_premium && (
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-center group transition-colors hover:border-yellow-300 shadow-sm dark:bg-slate-950/50 dark:border-slate-800/80 dark:hover:border-primary-500/30 dark:shadow-none">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-yellow-100 rounded-lg text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400">
+                        <Crown className="h-5 w-5" />
+                      </div>
+                      <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors dark:text-slate-300 dark:group-hover:text-slate-200">Premium Tokens</span>
+                    </div>
+                    <span className="text-2xl font-bold font-heading text-slate-900 dark:text-slate-50">{user.premium_tokens || 0}</span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="animate-pulse space-y-4">

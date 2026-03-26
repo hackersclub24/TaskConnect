@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
+  // import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";;
 
 const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
@@ -118,6 +119,12 @@ export const getChatWebSocketUrl = (taskId) => {
   return `${base}/ws/chat/${taskId}${tokenParam ? `?${tokenParam}` : ""}`;
 };
 export const fetchTaskMessages = (taskId) => api.get(`/tasks/${taskId}/messages`);
+
+// Premium features
+export const getTokenBalance = () => api.get("/premium/token-balance");
+export const unlockAIResumeReview = () => api.post("/premium/ai-resume-review");
+export const unlockPriorityMatching = () => api.post("/premium/priority-matching");
+export const checkPremiumAccess = (feature) => api.get(`/premium/check/${feature}`);
 
 export default api;
 

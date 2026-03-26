@@ -44,6 +44,10 @@ class User(Base):
     on_time_completion_rate = Column(Numeric(scale=2), default=0.0, nullable=False)
     leaderboard_score = Column(Numeric(scale=2), default=0.0, nullable=False, index=True)
 
+    # Premium tokens
+    premium_tokens = Column(Integer, default=0, nullable=False)
+    is_premium = Column(Boolean, default=False, nullable=False)
+
     owned_tasks = relationship(
         "Task",
         back_populates="owner",
