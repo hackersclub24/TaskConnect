@@ -70,6 +70,18 @@ def upload_profile_image(
 
     try:
         response = requests.post(cloudinary_url, files=files_data, data=data, timeout=10)
+        
+        # Log the response for debugging
+        print(f"Cloudinary response status: {response.status_code}")
+        print(f"Cloudinary request data: {data}")
+        
+        if not response.ok:
+            try:
+                error_details = response.json()
+                print(f"Cloudinary error response: {error_details}")
+            except:
+                print(f"Cloudinary error text: {response.text}")
+        
         response.raise_for_status()
         result = response.json()
         image_url = result.get("secure_url")
