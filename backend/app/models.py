@@ -48,6 +48,9 @@ class User(Base):
     premium_tokens = Column(Integer, default=0, nullable=False)
     is_premium = Column(Boolean, default=False, nullable=False)
 
+    # Profile image (Cloudinary URL)
+    profile_image_url = Column(String, nullable=True)
+
     owned_tasks = relationship(
         "Task",
         back_populates="owner",

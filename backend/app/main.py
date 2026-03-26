@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from .database import Base, engine
 from .routes import auth as auth_routes
@@ -50,6 +52,14 @@ app.include_router(chat_routes.router, prefix="/ws", tags=["chat"])
 app.include_router(platform_reviews_routes.router, prefix="/api/platform-reviews", tags=["platform-reviews"])
 app.include_router(leaderboard_routes.router, prefix="/api/leaderboard", tags=["leaderboard"])
 app.include_router(premium_routes.router, prefix="/api/premium", tags=["premium"])
+
+# Serve uploaded files (local storage fallback)
+uploads_dir = Path(__file__).parent / "uploads"
+uploads_dir.mkdir(exist_ok=True)
+try:
+    app.mount("/api/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
+except Exception as e:
+    print(f"Warning: Could not mount uploads directory: {e}")
 
 
 @app.get("/api/health")

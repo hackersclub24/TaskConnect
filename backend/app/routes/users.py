@@ -1,5 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.orm import Session, joinedload
+import requests
+import os
+import shutil
+from pathlib import Path
+from datetime import datetime
 
 from .. import models, schemas
 from ..auth import get_current_user
@@ -19,10 +24,97 @@ def update_current_user(
     update_dict = update_data.model_dump(exclude_unset=True)
     for key, value in update_dict.items():
         setattr(current_user, key, value)
-    
+
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@router.post("/me/upload-profile-image", response_model=schemas.UserOut)
+def upload_profile_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Upload profile image - stores locally as fallback"""
+
+    # Validate file size (max 5MB)
+    max_size = 5 * 1024 * 1024  # 5MB
+    content = file.file.read()
+    if len(content) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File too large (max 5MB)"
+        )
+
+    # Validate file type
+    allowed_types = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Only JPEG, PNG, WebP, and GIF allowed"
+        )
+
+    try:
+        # Try Cloudinary first
+        cloudinary_url = "https://api.cloudinary.com/v1_1/{}/image/upload".format(
+            os.getenv("CLOUDINARY_CLOUD_NAME")
+        )
+
+        files_data = {
+            "file": (file.filename, content, file.content_type)
+        }
+
+        data = {
+            "upload_preset": os.getenv("CLOUDINARY_UPLOAD_PRESET"),
+            "folder": "profile_images"
+        }
+
+        try:
+            response = requests.post(cloudinary_url, files=files_data, data=data, timeout=10)
+            response.raise_for_status()
+            result = response.json()
+            image_url = result.get("secure_url")
+
+            if image_url:
+                # Cloudinary succeeded
+                current_user.profile_image_url = image_url
+                db.commit()
+                db.refresh(current_user)
+                return current_user
+
+        except Exception as cloudinary_error:
+            print(f"Cloudinary failed, using local storage: {str(cloudinary_error)}")
+
+        # Fallback: Store locally
+        uploads_dir = Path(__file__).parent.parent / "uploads" / "profile_images"
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate unique filename
+        file_ext = Path(file.filename).suffix
+        filename = f"user_{current_user.id}_{datetime.now().timestamp()}{file_ext}"
+        file_path = uploads_dir / filename
+
+        # Save file
+        with open(file_path, "wb") as f:
+            f.write(content)
+
+        # Create URL (this assumes you'll serve static files)
+        image_url = f"/api/uploads/profile_images/{filename}"
+
+        # Save URL to database
+        current_user.profile_image_url = image_url
+        db.commit()
+        db.refresh(current_user)
+
+        return current_user
+
+    except Exception as e:
+        print(f"Upload error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Upload failed: {str(e)}"
+        )
 
 
 @router.get("/{user_id}/recommended-tasks", response_model=list[schemas.RecommendedTaskOut])

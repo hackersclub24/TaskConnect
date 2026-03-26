@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Star, Building2, Award, Mail, Edit2, Save, X, Briefcase, CheckCircle, Clock, Coins, Crown } from "lucide-react";
 import { fetchUserById, fetchUserReviews, fetchUserStats, updateUserProfile, fetchCurrentUser } from "../services/api";
+import ProfileImageUpload from "../components/ProfileImageUpload";
 
 const Profile = () => {
   const { userId } = useParams();
@@ -23,6 +24,10 @@ const Profile = () => {
   });
   
   const [activeTab, setActiveTab] = useState("posted"); // 'posted' or 'accepted'
+
+  const handleImageUpdate = (newImageUrl) => {
+    setUser(prev => ({ ...prev, profile_image_url: newImageUrl }));
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -117,9 +122,25 @@ const Profile = () => {
         
         <div className="relative z-10 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start text-center sm:text-left">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-primary-500/20 text-4xl font-bold text-primary-400 shadow-inner">
-              {(user.name && user.name[0]?.toUpperCase()) || user.email[0]?.toUpperCase() || "?"}
-            </div>
+            {isOwner ? (
+              <ProfileImageUpload
+                currentImageUrl={user.profile_image_url}
+                onImageUpdate={handleImageUpdate}
+                userName={user.name || user.email}
+              />
+            ) : (
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-primary-500/20 text-4xl font-bold text-primary-400 shadow-inner">
+                {user.profile_image_url ? (
+                  <img
+                    src={user.profile_image_url.startsWith("/") ? `http://127.0.0.1:8000${user.profile_image_url}` : user.profile_image_url}
+                    alt={user.name}
+                    className="w-24 h-24 rounded-3xl object-cover"
+                  />
+                ) : (
+                  (user.name && user.name[0]?.toUpperCase()) || user.email[0]?.toUpperCase() || "?"
+                )}
+              </div>
+            )}
             <div className="space-y-2">
               <h1 className="text-2xl font-bold font-heading text-slate-900 dark:text-slate-50">
                 {user.name || "User Profile"}

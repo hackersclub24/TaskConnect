@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_BASE_URL =
   // import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";;
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
 
 const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
@@ -125,6 +125,10 @@ export const getTokenBalance = () => api.get("/premium/token-balance");
 export const unlockAIResumeReview = () => api.post("/premium/ai-resume-review");
 export const unlockPriorityMatching = () => api.post("/premium/priority-matching");
 export const checkPremiumAccess = (feature) => api.get(`/premium/check/${feature}`);
+
+// Cloudinary profile image
+export const updateProfileImage = (imageUrl) =>
+  api.patch("/users/me", { profile_image_url: imageUrl });
 
 export default api;
 

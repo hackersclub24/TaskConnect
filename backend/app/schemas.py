@@ -32,6 +32,7 @@ class UserOut(UserBase):
     college_name: Optional[str] = None
     premium_tokens: int = 0
     is_premium: bool = False
+    profile_image_url: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -42,6 +43,10 @@ class UserUpdate(BaseModel):
     bio: Optional[str] = None
     skills: Optional[str] = None
     phone: Optional[str] = None
+
+
+class ProfileImageUpdate(BaseModel):
+    profile_image_url: str
 
 
 class TaskBase(BaseModel):
