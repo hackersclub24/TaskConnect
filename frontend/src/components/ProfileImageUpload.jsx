@@ -28,6 +28,64 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
   const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef(null);
 
+  const uploadWithRetry = async (formData, token, retryCount = 0) => {
+    const maxRetries = 3;
+    const retryDelay = 1000 * Math.pow(2, retryCount); // Exponential backoff: 1s, 2s, 4s
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/me/upload-profile-image`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        let errorMessage = "Upload failed. Please try again.";
+
+        if (contentType?.includes("application/json")) {
+          const data = await response.json();
+          errorMessage = data.detail || data.message || errorMessage;
+        } else {
+          errorMessage = `Upload failed (${response.status}). Please try again.`;
+        }
+
+        // Retry on 503 (Service Unavailable)
+        if (response.status === 503 && retryCount < maxRetries) {
+          console.log(`Retrying upload (attempt ${retryCount + 1}/${maxRetries})...`);
+          setError(`Retrying... (${retryCount + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          return uploadWithRetry(formData, token, retryCount + 1);
+        }
+
+        console.error("Upload error response:", response.status, errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log("Upload response:", data);
+
+      let imageUrl = data.profile_image_url;
+
+      if (!imageUrl) {
+        console.error("No image URL in response:", data);
+        throw new Error("Image uploaded, but no image URL was returned.");
+      }
+
+      return imageUrl;
+    } catch (err) {
+      if (retryCount < maxRetries && err.message.includes("temporarily unavailable")) {
+        console.log(`Retrying upload (attempt ${retryCount + 1}/${maxRetries})...`);
+        setError(`Retrying... (${retryCount + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return uploadWithRetry(formData, token, retryCount + 1);
+      }
+      throw err;
+    }
+  };
+
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -58,47 +116,14 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
         return;
       }
 
-      // Upload to backend endpoint
-      const response = await fetch(`${API_BASE_URL}/users/me/upload-profile-image`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
+      const imageUrl = await uploadWithRetry(formData, token);
+      const absoluteUrl = toAbsoluteImageUrl(imageUrl);
 
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        let errorMessage = "Upload failed. Please try again.";
-
-        if (contentType?.includes("application/json")) {
-          const data = await response.json();
-          errorMessage = data.detail || data.message || errorMessage;
-        } else {
-          errorMessage = `Upload failed (${response.status}). Please try again.`;
-        }
-
-        console.error("Upload error response:", response.status, errorMessage);
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      console.log("Upload response:", data);
-
-      let imageUrl = data.profile_image_url;
-
-      if (!imageUrl) {
-        console.error("No image URL in response:", data);
-        throw new Error("Image uploaded, but no image URL was returned.");
-      }
-
-      imageUrl = toAbsoluteImageUrl(imageUrl);
-
-      console.log("Image URL set to:", imageUrl);
+      console.log("Image URL set to:", absoluteUrl);
 
       setSuccess("Profile image updated successfully.");
       setImageError(false);
-      onImageUpdate(imageUrl);
+      onImageUpdate(absoluteUrl);
 
       setTimeout(() => setSuccess(""), 2000);
     } catch (err) {
