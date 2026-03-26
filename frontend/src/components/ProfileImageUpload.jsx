@@ -25,12 +25,12 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
 
     // Validate file
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file");
+      setError("Please choose a valid image file.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError("File is too large (max 5MB)");
+      setError("File is too large. Maximum size is 5 MB.");
       return;
     }
 
@@ -45,7 +45,7 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
 
       const token = localStorage.getItem("token");
       if (!token) {
-        setError("Not authenticated. Please login.");
+        setError("You are not logged in. Please sign in and try again.");
         return;
       }
 
@@ -60,13 +60,13 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
 
       if (!response.ok) {
         const contentType = response.headers.get("content-type");
-        let errorMessage = "Upload failed";
+        let errorMessage = "Upload failed. Please try again.";
 
         if (contentType?.includes("application/json")) {
           const data = await response.json();
           errorMessage = data.detail || data.message || errorMessage;
         } else {
-          errorMessage = `Server error: ${response.status}`;
+          errorMessage = `Upload failed (${response.status}). Please try again.`;
         }
 
         console.error("Upload error response:", response.status, errorMessage);
@@ -80,20 +80,20 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
 
       if (!imageUrl) {
         console.error("No image URL in response:", data);
-        throw new Error("No image URL returned from server");
+        throw new Error("Image uploaded, but no image URL was returned.");
       }
 
       imageUrl = toAbsoluteImageUrl(imageUrl);
 
       console.log("Image URL set to:", imageUrl);
 
-      setSuccess("✓ Profile image updated!");
+      setSuccess("Profile image updated successfully.");
       onImageUpdate(imageUrl);
 
       setTimeout(() => setSuccess(""), 2000);
     } catch (err) {
       console.error("Upload error:", err);
-      setError(err.message || "Failed to upload profile image");
+      setError(err.message || "Could not upload your profile image. Please try again.");
     } finally {
       setLoading(false);
       // Reset file input
