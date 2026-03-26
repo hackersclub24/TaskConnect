@@ -46,11 +46,19 @@
   }
 
   a {
-    @apply text-primary-600 transition-colors hover:text-primary-700;
+    @apply text-primary-600 transition-colors;
+  }
+
+  a:hover {
+    @apply text-primary-700;
   }
 
   [data-theme="dark"] a {
-    @apply text-primary-400 hover:text-primary-300;
+    @apply text-primary-400;
+  }
+
+  [data-theme="dark"] a:hover {
+    @apply text-primary-300;
   }
 
   /* Shared abstract gradients handled by tailwind classes */
