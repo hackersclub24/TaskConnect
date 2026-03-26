@@ -65,8 +65,7 @@ def upload_profile_image(
     }
 
     data = {
-        "upload_preset": os.getenv("CLOUDINARY_UPLOAD_PRESET"),
-        "folder": "profile_images"
+        "upload_preset": os.getenv("CLOUDINARY_UPLOAD_PRESET")
     }
 
     try:
