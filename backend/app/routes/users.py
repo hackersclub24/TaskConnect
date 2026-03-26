@@ -55,60 +55,45 @@ def upload_profile_image(
             detail="Invalid file type. Only JPEG, PNG, WebP, and GIF allowed"
         )
 
+    # Upload to Cloudinary (required - no local fallback on Render)
+    cloudinary_url = "https://api.cloudinary.com/v1_1/{}/image/upload".format(
+        os.getenv("CLOUDINARY_CLOUD_NAME")
+    )
+
+    files_data = {
+        "file": (file.filename, content, file.content_type)
+    }
+
+    data = {
+        "upload_preset": os.getenv("CLOUDINARY_UPLOAD_PRESET"),
+        "folder": "profile_images"
+    }
+
     try:
-        # Try Cloudinary first
-        cloudinary_url = "https://api.cloudinary.com/v1_1/{}/image/upload".format(
-            os.getenv("CLOUDINARY_CLOUD_NAME")
-        )
+        response = requests.post(cloudinary_url, files=files_data, data=data, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+        image_url = result.get("secure_url")
 
-        files_data = {
-            "file": (file.filename, content, file.content_type)
-        }
+        if not image_url:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Cloudinary upload succeeded but no URL returned"
+            )
 
-        data = {
-            "upload_preset": os.getenv("CLOUDINARY_UPLOAD_PRESET"),
-            "folder": "profile_images"
-        }
-
-        try:
-            response = requests.post(cloudinary_url, files=files_data, data=data, timeout=10)
-            response.raise_for_status()
-            result = response.json()
-            image_url = result.get("secure_url")
-
-            if image_url:
-                # Cloudinary succeeded
-                current_user.profile_image_url = image_url
-                db.commit()
-                db.refresh(current_user)
-                return current_user
-
-        except Exception as cloudinary_error:
-            print(f"Cloudinary failed, using local storage: {str(cloudinary_error)}")
-
-        # Fallback: Store locally
-        uploads_dir = Path(__file__).parent.parent / "uploads" / "profile_images"
-        uploads_dir.mkdir(parents=True, exist_ok=True)
-
-        # Generate unique filename
-        file_ext = Path(file.filename).suffix
-        filename = f"user_{current_user.id}_{datetime.now().timestamp()}{file_ext}"
-        file_path = uploads_dir / filename
-
-        # Save file
-        with open(file_path, "wb") as f:
-            f.write(content)
-
-        # Create URL (this assumes you'll serve static files)
-        image_url = f"/api/uploads/profile_images/{filename}"
-
-        # Save URL to database
+        # Save Cloudinary URL to database
         current_user.profile_image_url = image_url
         db.commit()
         db.refresh(current_user)
 
         return current_user
 
+    except requests.exceptions.RequestException as e:
+        print(f"Cloudinary upload failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Image hosting service temporarily unavailable. Please try again in a moment."
+        )
     except Exception as e:
         print(f"Upload error: {str(e)}")
         raise HTTPException(

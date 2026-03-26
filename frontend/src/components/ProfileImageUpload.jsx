@@ -7,9 +7,17 @@ const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
 const toAbsoluteImageUrl = (url) => {
   if (!url) return url;
+  
+  // Already absolute (http/https)
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  
+  // Relative path - make it absolute
   if (url.startsWith("/")) {
     return `${API_ORIGIN}${url}`;
   }
+  
   return url;
 };
 
@@ -17,6 +25,7 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFileSelect = async (e) => {
@@ -88,6 +97,7 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
       console.log("Image URL set to:", imageUrl);
 
       setSuccess("Profile image updated successfully.");
+      setImageError(false);
       onImageUpdate(imageUrl);
 
       setTimeout(() => setSuccess(""), 2000);
@@ -107,10 +117,11 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
     <div className="flex flex-col items-center gap-4">
       {/* Current Image */}
       <div className="relative w-32 h-32">
-        {currentImageUrl ? (
+        {currentImageUrl && !imageError ? (
           <img
             src={toAbsoluteImageUrl(currentImageUrl)}
             alt={userName}
+            onError={() => setImageError(true)}
             className="w-32 h-32 rounded-full object-cover border-4 border-primary-200 dark:border-primary-800"
           />
         ) : (
@@ -146,6 +157,15 @@ const ProfileImageUpload = ({ currentImageUrl, onImageUpdate, userName }) => {
           <div className="flex items-center gap-2">
             <X className="w-4 h-4" />
             <span>{error}</span>
+          </div>
+        </div>
+      )}
+
+      {imageError && !error && (
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm text-yellow-700 dark:bg-yellow-500/10 dark:border-yellow-500/30 dark:text-yellow-300">
+          <div className="flex items-center gap-2">
+            <X className="w-4 h-4" />
+            <span>Image unavailable. Upload a new one to update.</span>
           </div>
         </div>
       )}
