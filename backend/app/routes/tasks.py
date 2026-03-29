@@ -453,6 +453,45 @@ def list_task_applications(
     return [_serialize_application(app, db) for app in applications]
 
 
+@router.delete("/{task_id}/applications/{application_id}", status_code=status.HTTP_204_NO_CONTENT)
+def withdraw_task_application(
+    task_id: int,
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    application = (
+        db.query(models.TaskApplication)
+        .filter(
+            models.TaskApplication.id == application_id,
+            models.TaskApplication.task_id == task_id,
+        )
+        .first()
+    )
+    if not application:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+
+    if application.applicant_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only withdraw your own application",
+        )
+
+    if application.status != models.TaskApplicationStatus.pending:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only pending applications can be withdrawn",
+        )
+
+    db.delete(application)
+    db.commit()
+    return None
+
+
 @router.post("/{task_id}/applications/{application_id}/approve", response_model=schemas.TaskOut)
 def approve_task_application(
     task_id: int,

@@ -25,6 +25,7 @@ import {
   fetchRecommendedFreelancers,
   generateProposal,
   rejectTaskApplication,
+  withdrawTaskApplication,
   updateTask,
   updateTaskStatus
 } from "../services/api";
@@ -132,6 +133,23 @@ const TaskDetails = () => {
       await refreshApplications();
     } catch (err) {
       setError(err.response?.data?.detail || "Could not apply for this task right now.");
+    } finally {
+      setAccepting(false);
+    }
+  };
+
+  const handleWithdrawApplication = async () => {
+    if (!myApplication?.id) return;
+    const confirmed = window.confirm("Do you want to withdraw your application for this task?");
+    if (!confirmed) return;
+
+    setAccepting(true);
+    setError("");
+    try {
+      await withdrawTaskApplication(id, myApplication.id);
+      await refreshApplications();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Could not withdraw your request right now.");
     } finally {
       setAccepting(false);
     }
@@ -419,16 +437,22 @@ const TaskDetails = () => {
                 >
                   {accepting ? "Canceling..." : "Cancel my acceptance"}
                 </button>
+              ) : myApplication?.status === "pending" ? (
+                <button
+                  onClick={handleWithdrawApplication}
+                  disabled={accepting}
+                  className="rounded-lg border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-medium text-red-700 shadow-sm hover:bg-red-100 disabled:opacity-50 dark:border-red-500/60 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                >
+                  {accepting ? "Withdrawing..." : "Withdraw request"}
+                </button>
               ) : (
                 <button
                   onClick={handleApply}
-                  disabled={!canAccept || accepting || myApplication?.status === "pending"}
+                  disabled={!canAccept || accepting}
                   className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-500 disabled:opacity-50"
                 >
                   {!canAccept
                     ? "Not available"
-                    : myApplication?.status === "pending"
-                    ? "Request sent"
                     : accepting
                     ? "Applying..."
                     : myApplication?.status === "rejected"
