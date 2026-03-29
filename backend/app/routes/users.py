@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Query
+from typing import Optional
 from sqlalchemy.orm import Session, joinedload
 import requests
 import os
@@ -125,6 +126,25 @@ def upload_profile_image(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Upload failed: {str(e)}"
         )
+
+
+@router.get("/colleges", response_model=list[str])
+def list_colleges(
+    q: Optional[str] = Query(None, description="Optional search text for college name"),
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    """Return distinct college names for autocomplete dropdowns."""
+    query = db.query(models.User.college_name).filter(
+        models.User.college_name.isnot(None),
+        models.User.college_name != "",
+    )
+
+    if q:
+        query = query.filter(models.User.college_name.ilike(f"%{q.strip()}%"))
+
+    rows = query.distinct().order_by(models.User.college_name.asc()).limit(limit).all()
+    return [row[0] for row in rows if row and row[0]]
 
 
 @router.get("/{user_id}/recommended-tasks", response_model=list[schemas.RecommendedTaskOut])

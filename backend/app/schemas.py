@@ -43,6 +43,7 @@ class UserUpdate(BaseModel):
     bio: Optional[str] = None
     skills: Optional[str] = None
     phone: Optional[str] = None
+    college_name: Optional[str] = None
 
 
 class ProfileImageUpdate(BaseModel):
@@ -215,7 +216,7 @@ class MessageOut(BaseModel):
     id: int
     task_id: int
     sender_id: int
-    sender_email: Optional[str] = None
+    sender_name: Optional[str] = None
     message: str
     timestamp: datetime
 
@@ -280,4 +281,17 @@ class PremiumFeatureGateOut(BaseModel):
     current_tokens: int
     required_tokens: int
     message: Optional[str] = None
+
+
+class TaskApplicationOut(BaseModel):
+    id: int
+    task_id: int
+    applicant_id: int
+    applicant_name: Optional[str] = None
+    applicant_email: Optional[str] = None
+    status: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
 

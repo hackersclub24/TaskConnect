@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
-  // import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+  // import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
 
 const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
@@ -61,7 +61,18 @@ export const fetchTaskById = (id) => api.get(`/tasks/${id}`);
 
 export const createTask = (data) => api.post("/tasks/", data);
 
-export const acceptTask = (id) => api.post(`/tasks/${id}/accept`);
+export const applyForTask = (id) => api.post(`/tasks/${id}/apply`);
+
+// Backward-compatible alias used by older UI code.
+export const acceptTask = (id) => applyForTask(id);
+
+export const fetchTaskApplications = (id) => api.get(`/tasks/${id}/applications`);
+
+export const approveTaskApplication = (taskId, applicationId) =>
+  api.post(`/tasks/${taskId}/applications/${applicationId}/approve`);
+
+export const rejectTaskApplication = (taskId, applicationId) =>
+  api.post(`/tasks/${taskId}/applications/${applicationId}/reject`);
 
 export const cancelTaskAcceptance = (id) => api.post(`/tasks/${id}/cancel-acceptance`);
 
@@ -85,6 +96,9 @@ export const fetchRecommendedTasks = (userId) =>
 export const fetchUserById = (userId) => api.get(`/users/${userId}`);
 
 export const updateUserProfile = (data) => api.patch("/users/me", data);
+
+export const fetchCollegeSuggestions = (query = "") =>
+  api.get("/users/colleges", { params: { q: query } });
 
 export const fetchUserStats = (userId) => api.get(`/users/${userId}/stats`);
 

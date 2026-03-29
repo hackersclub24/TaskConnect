@@ -125,7 +125,7 @@ const CreateTask = () => {
                     onClick={() => setForm((p) => ({ ...p, category: cat.value }))}
                     className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-all ${
                       isSelected
-                        ? "border-primary-500 bg-primary-500/15 text-primary-300"
+                        ? "border-primary-600 bg-primary-600/40 text-primary-100"
                         : "border-slate-700 bg-slate-900/60 text-slate-400 hover:border-slate-600 hover:bg-slate-800/60"
                     }`}
                   >

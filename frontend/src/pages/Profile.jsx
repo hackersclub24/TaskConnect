@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Star, Building2, Award, Mail, Edit2, Save, X, Briefcase, CheckCircle, Clock, Coins, Crown } from "lucide-react";
-import { fetchUserById, fetchUserReviews, fetchUserStats, updateUserProfile, fetchCurrentUser } from "../services/api";
+import { fetchUserById, fetchUserReviews, fetchUserStats, updateUserProfile, fetchCurrentUser, fetchCollegeSuggestions } from "../services/api";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 
 const Profile = () => {
@@ -20,8 +20,10 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({
     name: "",
     bio: "",
-    skills: ""
+    skills: "",
+    college_name: ""
   });
+  const [collegeSuggestions, setCollegeSuggestions] = useState([]);
   
   const [activeTab, setActiveTab] = useState("posted"); // 'posted' or 'accepted'
 
@@ -59,7 +61,8 @@ const Profile = () => {
         setEditForm({
           name: userData.name || "",
           bio: userData.bio || "",
-          skills: userData.skills || ""
+          skills: userData.skills || "",
+          college_name: userData.college_name || ""
         });
       } catch {
         setError("Failed to load profile.");
@@ -76,6 +79,22 @@ const Profile = () => {
     const { name, value } = e.target;
     setEditForm(prev => ({ ...prev, [name]: value }));
   };
+
+  useEffect(() => {
+    if (!isEditing) return;
+    const term = (editForm.college_name || "").trim();
+
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await fetchCollegeSuggestions(term);
+        setCollegeSuggestions(Array.isArray(data) ? data : []);
+      } catch {
+        setCollegeSuggestions([]);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [editForm.college_name, isEditing]);
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -220,6 +239,23 @@ const Profile = () => {
                     className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary-500 shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
                     placeholder="Python, UI Design, Video Editing"
                   />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 block mb-1 dark:text-slate-400">College</label>
+                  <input
+                    type="text"
+                    name="college_name"
+                    value={editForm.college_name}
+                    onChange={handleEditChange}
+                    list="college-suggestions"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:border-primary-500 shadow-sm dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
+                    placeholder="Start typing your college name"
+                  />
+                  <datalist id="college-suggestions">
+                    {collegeSuggestions.map((college) => (
+                      <option key={college} value={college} />
+                    ))}
+                  </datalist>
                 </div>
               </div>
               <div className="pt-2">

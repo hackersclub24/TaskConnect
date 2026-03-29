@@ -13,15 +13,18 @@ import {
   Sparkles
 } from "lucide-react";
 import {
-  acceptTask,
+  applyForTask,
+  approveTaskApplication,
   cancelTaskAcceptance,
   createReview,
   deleteTask,
   fetchCurrentUser,
+  fetchTaskApplications,
   fetchTaskById,
   fetchTaskContacts,
   fetchRecommendedFreelancers,
   generateProposal,
+  rejectTaskApplication,
   updateTask,
   updateTaskStatus
 } from "../services/api";
@@ -65,6 +68,7 @@ const TaskDetails = () => {
   const [reviewForm, setReviewForm] = useState({ rating: 5, text: "" });
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [applications, setApplications] = useState([]);
 
   useEffect(() => {
     if (!token) {
@@ -77,17 +81,20 @@ const TaskDetails = () => {
           { data: taskData },
           { data: userData },
           { data: contactsData },
-          { data: recData }
+          { data: recData },
+          { data: applicationData }
         ] = await Promise.all([
           fetchTaskById(id),
           fetchCurrentUser(),
           fetchTaskContacts(id),
-          fetchRecommendedFreelancers(id)
+          fetchRecommendedFreelancers(id),
+          fetchTaskApplications(id)
         ]);
         setTask(taskData);
         setCurrentUser(userData);
         setContacts(contactsData);
         setRecommendedFreelancers(recData || []);
+        setApplications(applicationData || []);
         setEditForm({
           title: taskData.title,
           description: taskData.description,
@@ -108,16 +115,52 @@ const TaskDetails = () => {
     load();
   }, [id, navigate, token]);
 
-  const handleAccept = async () => {
+  const refreshApplications = async () => {
+    try {
+      const { data } = await fetchTaskApplications(id);
+      setApplications(data || []);
+    } catch {
+      // Ignore refresh failures and keep previous state
+    }
+  };
+
+  const handleApply = async () => {
     setAccepting(true);
     setError("");
     try {
-      const { data } = await acceptTask(id);
-      setTask(data);
+      await applyForTask(id);
+      await refreshApplications();
     } catch (err) {
-      setError(err.response?.data?.detail || "Could not accept this task right now.");
+      setError(err.response?.data?.detail || "Could not apply for this task right now.");
     } finally {
       setAccepting(false);
+    }
+  };
+
+  const handleApproveApplication = async (applicationId) => {
+    setSaving(true);
+    setError("");
+    try {
+      const { data } = await approveTaskApplication(id, applicationId);
+      setTask(data);
+      await refreshApplications();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Could not approve this application right now.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRejectApplication = async (applicationId) => {
+    setSaving(true);
+    setError("");
+    try {
+      await rejectTaskApplication(id, applicationId);
+      await refreshApplications();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Could not reject this application right now.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -130,6 +173,7 @@ const TaskDetails = () => {
     try {
       const { data } = await cancelTaskAcceptance(id);
       setTask(data);
+      await refreshApplications();
       if (isOwner) {
          setContacts(prev => ({ ...prev, acceptor_phone: null }));
       }
@@ -272,6 +316,9 @@ const TaskDetails = () => {
     : "No deadline";
 
   const canAccept = task.status === "open";
+  const myApplication =
+    applications.find((app) => String(app.applicant_id) === String(currentUser?.id)) || null;
+  const ownerPendingApplications = applications.filter((app) => app.status === "pending");
   const category = categoryConfig[task.category || "paid"] || categoryConfig.paid;
   const CategoryIcon = category.icon;
 
@@ -374,11 +421,19 @@ const TaskDetails = () => {
                 </button>
               ) : (
                 <button
-                  onClick={handleAccept}
-                  disabled={!canAccept || accepting}
+                  onClick={handleApply}
+                  disabled={!canAccept || accepting || myApplication?.status === "pending"}
                   className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-primary-500 disabled:opacity-50"
                 >
-                  {canAccept ? (accepting ? "Accepting..." : "Accept task") : "Not available"}
+                  {!canAccept
+                    ? "Not available"
+                    : myApplication?.status === "pending"
+                    ? "Request sent"
+                    : accepting
+                    ? "Applying..."
+                    : myApplication?.status === "rejected"
+                    ? "Apply again"
+                    : "Apply for task"}
                 </button>
               )}
               <button
@@ -444,6 +499,54 @@ const TaskDetails = () => {
                       : "No one has accepted this task yet.")}
                 </p>
               </div>
+
+                <div className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80">
+                  <p className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                    Applications ({applications.length})
+                  </p>
+                  {applications.length === 0 ? (
+                    <p className="text-sm text-slate-600 dark:text-slate-400">No applications yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {applications.map((app) => (
+                        <div
+                          key={app.id}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950/60"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-slate-900 dark:text-slate-100">
+                              {app.applicant_name || app.applicant_email || `User #${app.applicant_id}`}
+                            </p>
+                            {app.applicant_email && (
+                              <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                                {app.applicant_email}
+                              </p>
+                            )}
+                            <p className="text-xs uppercase text-slate-500 dark:text-slate-400">{app.status}</p>
+                          </div>
+                          {task.status === "open" && app.status === "pending" && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleApproveApplication(app.id)}
+                                disabled={saving}
+                                className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleRejectApplication(app.id)}
+                                disabled={saving}
+                                className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
             </>
           )}
         </div>

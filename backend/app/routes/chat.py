@@ -89,7 +89,7 @@ async def websocket_chat_endpoint(websocket: WebSocket, task_id: int):
                     "id": msg.id,
                     "task_id": msg.task_id,
                     "sender_id": msg.sender_id,
-                    "sender_email": user.email,
+                    "sender_name": user.name or user.email,
                     "message": msg.message,
                     "timestamp": msg.timestamp.isoformat() if msg.timestamp else None,
                 }

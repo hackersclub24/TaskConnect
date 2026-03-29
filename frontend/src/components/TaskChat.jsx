@@ -18,7 +18,7 @@ const TaskChat = ({ taskId, currentUserId, canAccess }) => {
 
   // Auto-scroll to newest message
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
   useEffect(() => {
@@ -137,7 +137,7 @@ const TaskChat = ({ taskId, currentUserId, canAccess }) => {
                 >
                   {String(msg.sender_id) !== String(currentUserId) && (
                     <p className="mb-0.5 text-[10px] font-medium text-slate-400">
-                      {msg.sender_email || `User #${msg.sender_id}`}
+                      {msg.sender_name || `User #${msg.sender_id}`}
                     </p>
                   )}
                   <p className="break-words text-sm">{msg.message}</p>

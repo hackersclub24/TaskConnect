@@ -42,27 +42,27 @@ const Register = () => {
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800/80 bg-slate-900/90 p-6 shadow-xl shadow-black/50 sm:p-8">
-        <h1 className="mb-2 text-center text-2xl font-semibold text-slate-50">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-black/5 dark:border-slate-800/80 dark:bg-slate-900/90 dark:shadow-black/50 sm:p-8">
+        <h1 className="mb-2 text-center text-2xl font-semibold text-slate-900 dark:text-slate-50">
           Join the Skillstreet campus
         </h1>
-        <p className="mb-6 text-center text-sm text-slate-400">
+        <p className="mb-6 text-center text-sm text-slate-600 dark:text-slate-400">
           Team up with other students to handle projects, assignments, and side
           gigs before the deadline hits.
         </p>
         {error && (
-          <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
             {error}
           </div>
         )}
         {success && (
-          <div className="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          <div className="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">
             {success}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
               <Mail className="h-3.5 w-3.5" />
               Email
             </label>
@@ -77,7 +77,7 @@ const Register = () => {
             />
           </div>
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
               <Building2 className="h-3.5 w-3.5" />
               College (optional)
             </label>
@@ -90,7 +90,7 @@ const Register = () => {
             />
           </div>
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
               <Phone className="h-3.5 w-3.5" />
               Phone (optional)
             </label>
@@ -103,7 +103,7 @@ const Register = () => {
             />
           </div>
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
               <Award className="h-3.5 w-3.5" />
               Skills (comma separated)
             </label>
@@ -116,7 +116,7 @@ const Register = () => {
             />
           </div>
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
               <Lock className="h-3.5 w-3.5" />
               Password
             </label>
@@ -133,7 +133,7 @@ const Register = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-300 hover:text-slate-100"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "Hide" : "Show"}
@@ -149,10 +149,10 @@ const Register = () => {
           </button>
         </form>
 
-        <div className="my-4 flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500">
-          <span className="h-px flex-1 bg-slate-700" />
+        <div className="my-4 flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-500">
+          <span className="h-px flex-1 bg-slate-300 dark:bg-slate-700" />
           or sign up with
-          <span className="h-px flex-1 bg-slate-700" />
+          <span className="h-px flex-1 bg-slate-300 dark:bg-slate-700" />
         </div>
 
         <GoogleLoginButton
@@ -178,9 +178,9 @@ const Register = () => {
           }}
         />
 
-        <p className="mt-5 text-center text-sm text-slate-400">
+        <p className="mt-5 text-center text-sm text-slate-600 dark:text-slate-400">
           Already have an account?{" "}
-          <Link to="/login" className="font-medium text-primary-400 hover:underline">
+          <Link to="/login" className="font-medium text-primary-600 hover:underline dark:text-primary-400">
             Login
           </Link>
         </p>

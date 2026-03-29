@@ -6,6 +6,7 @@ const PremiumFeaturesModal = ({ isOpen, onClose, tokenBalance, isPremium }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const isComingSoon = true;
   const features = [
     {
       id: "ai-resume-review",
@@ -97,12 +98,23 @@ const PremiumFeaturesModal = ({ isOpen, onClose, tokenBalance, isPremium }) => {
             <p className="font-medium">Your Balance: <span className="text-amber-600 dark:text-amber-400 font-bold">{tokenBalance} tokens</span></p>
           </div>
 
-          <div className="space-y-3">
+          <div className="mb-4 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2 text-xs font-medium text-primary-700 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-300">
+            Premium unlocks are coming soon. You can preview features for now.
+          </div>
+
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-end">
+              <span className="mt-2 mr-2 rounded-full border border-slate-300 bg-white/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-200">
+                Coming Soon
+              </span>
+            </div>
+
+            <div className="space-y-3 blur-[1.5px] opacity-90">
             {features.map((feature) => {
               const Icon = feature.icon;
               const canAfford = tokenBalance >= feature.cost;
               const isEarlyAccess = feature.id === "early-access";
-              const isDisabled = loading || !canAfford || (isEarlyAccess && !isPremium);
+              const isDisabled = isComingSoon || loading || !canAfford || (isEarlyAccess && !isPremium);
 
               return (
                 <div
@@ -134,7 +146,9 @@ const PremiumFeaturesModal = ({ isOpen, onClose, tokenBalance, isPremium }) => {
                         onClick={() => handleUnlock(feature.id, feature.cost)}
                         disabled={isDisabled}
                         className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                          isEarlyAccess && !isPremium
+                          isComingSoon
+                            ? "bg-slate-200 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-400"
+                            : isEarlyAccess && !isPremium
                             ? "bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500"
                             : feature.cost === 0
                             ? "bg-slate-200 text-slate-600 cursor-not-allowed dark:bg-slate-700 dark:text-slate-300"
@@ -143,13 +157,14 @@ const PremiumFeaturesModal = ({ isOpen, onClose, tokenBalance, isPremium }) => {
                             : "bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500"
                         }`}
                       >
-                        {loading ? "Processing..." : isEarlyAccess && !isPremium ? "Premium Only" : feature.cost === 0 ? "Included" : "Unlock"}
+                        {isComingSoon ? "Coming Soon" : loading ? "Processing..." : isEarlyAccess && !isPremium ? "Premium Only" : feature.cost === 0 ? "Included" : "Unlock"}
                       </button>
                     </div>
                   </div>
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
       </div>

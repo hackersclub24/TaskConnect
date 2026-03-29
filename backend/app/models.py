@@ -23,6 +23,12 @@ class TaskStatus(str, enum.Enum):
     completed = "completed"
 
 
+class TaskApplicationStatus(str, enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -73,6 +79,11 @@ class User(Base):
         back_populates="reviewer",
         foreign_keys="Review.reviewer_id",
     )
+    task_applications = relationship(
+        "TaskApplication",
+        back_populates="applicant",
+        foreign_keys="TaskApplication.applicant_id",
+    )
 
 
 class Task(Base):
@@ -104,6 +115,28 @@ class Task(Base):
         foreign_keys=[assigned_to],
     )
     messages = relationship("Message", back_populates="task", order_by="Message.timestamp")
+    applications = relationship(
+        "TaskApplication",
+        back_populates="task",
+        order_by="TaskApplication.created_at.desc()",
+    )
+
+
+class TaskApplication(Base):
+    __tablename__ = "task_applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False, index=True)
+    applicant_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    status = Column(
+        Enum(TaskApplicationStatus),
+        default=TaskApplicationStatus.pending,
+        nullable=False,
+    )
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    task = relationship("Task", back_populates="applications")
+    applicant = relationship("User", back_populates="task_applications", foreign_keys=[applicant_id])
 
 
 class Message(Base):

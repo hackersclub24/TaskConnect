@@ -15,6 +15,19 @@ from ..services.proposals import ProposalContext, generate_proposal
 router = APIRouter()
 
 
+def _serialize_application(app: models.TaskApplication, db: Session) -> schemas.TaskApplicationOut:
+    applicant = db.query(models.User).filter(models.User.id == app.applicant_id).first()
+    return schemas.TaskApplicationOut(
+        id=app.id,
+        task_id=app.task_id,
+        applicant_id=app.applicant_id,
+        applicant_name=applicant.name if applicant and applicant.name else None,
+        applicant_email=applicant.email if applicant else None,
+        status=app.status.value if hasattr(app.status, "value") else str(app.status),
+        created_at=app.created_at,
+    )
+
+
 @router.get("/", response_model=List[schemas.TaskOut])
 def list_tasks(
     db: Session = Depends(get_db),
@@ -192,7 +205,7 @@ def get_task_messages(
                 id=m.id,
                 task_id=m.task_id,
                 sender_id=m.sender_id,
-                sender_email=sender.email if sender else None,
+                sender_name=sender.name or sender.email if sender else None,
                 message=m.message,
                 timestamp=m.timestamp,
             )
@@ -364,8 +377,8 @@ def update_task_status(
     return task
 
 
-@router.post("/{task_id}/accept", response_model=schemas.TaskOut)
-def accept_task(
+@router.post("/{task_id}/apply", response_model=schemas.TaskApplicationOut)
+def apply_for_task(
     task_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
@@ -376,13 +389,159 @@ def accept_task(
     if task.status != models.TaskStatus.open:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Task is not open for acceptance",
+            detail="Task is not open for applications",
         )
+    if task.owner_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot apply to your own task",
+        )
+
+    existing = (
+        db.query(models.TaskApplication)
+        .filter(
+            models.TaskApplication.task_id == task_id,
+            models.TaskApplication.applicant_id == current_user.id,
+            models.TaskApplication.status.in_(
+                [models.TaskApplicationStatus.pending, models.TaskApplicationStatus.approved]
+            ),
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already applied for this task",
+        )
+
+    app = models.TaskApplication(
+        task_id=task_id,
+        applicant_id=current_user.id,
+        status=models.TaskApplicationStatus.pending,
+    )
+    db.add(app)
+    db.commit()
+    db.refresh(app)
+    return _serialize_application(app, db)
+
+
+@router.post("/{task_id}/accept", response_model=schemas.TaskApplicationOut)
+def accept_task_legacy_alias(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    # Backward-compatible alias for old frontend action name.
+    return apply_for_task(task_id, db, current_user)
+
+
+@router.get("/{task_id}/applications", response_model=list[schemas.TaskApplicationOut])
+def list_task_applications(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    query = db.query(models.TaskApplication).filter(models.TaskApplication.task_id == task_id)
+    if task.owner_id != current_user.id:
+        query = query.filter(models.TaskApplication.applicant_id == current_user.id)
+
+    applications = query.order_by(models.TaskApplication.created_at.desc()).all()
+    return [_serialize_application(app, db) for app in applications]
+
+
+@router.post("/{task_id}/applications/{application_id}/approve", response_model=schemas.TaskOut)
+def approve_task_application(
+    task_id: int,
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    if task.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the task owner can approve applications",
+        )
+    if task.status != models.TaskStatus.open:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Task is not open for approval",
+        )
+
+    application = (
+        db.query(models.TaskApplication)
+        .filter(
+            models.TaskApplication.id == application_id,
+            models.TaskApplication.task_id == task_id,
+        )
+        .first()
+    )
+    if not application:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+    if application.status != models.TaskApplicationStatus.pending:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only pending applications can be approved",
+        )
+
+    application.status = models.TaskApplicationStatus.approved
     task.status = models.TaskStatus.accepted
-    task.assigned_to = current_user.id
+    task.assigned_to = application.applicant_id
+
+    other_pending = (
+        db.query(models.TaskApplication)
+        .filter(
+            models.TaskApplication.task_id == task_id,
+            models.TaskApplication.id != application_id,
+            models.TaskApplication.status == models.TaskApplicationStatus.pending,
+        )
+        .all()
+    )
+    for app in other_pending:
+        app.status = models.TaskApplicationStatus.rejected
+
     db.commit()
     db.refresh(task)
     return task
+
+
+@router.post("/{task_id}/applications/{application_id}/reject", response_model=schemas.TaskApplicationOut)
+def reject_task_application(
+    task_id: int,
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    if task.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the task owner can reject applications",
+        )
+
+    application = (
+        db.query(models.TaskApplication)
+        .filter(
+            models.TaskApplication.id == application_id,
+            models.TaskApplication.task_id == task_id,
+        )
+        .first()
+    )
+    if not application:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+
+    application.status = models.TaskApplicationStatus.rejected
+    db.commit()
+    db.refresh(application)
+    return _serialize_application(application, db)
 
 
 @router.post("/{task_id}/cancel-acceptance", response_model=schemas.TaskOut)
@@ -405,8 +564,27 @@ def cancel_task_acceptance(
             detail="You are not allowed to cancel this task's acceptance",
         )
     
+    previous_assignee_id = task.assigned_to
+
     task.status = models.TaskStatus.open
     task.assigned_to = None
+
+    if previous_assignee_id:
+        approved_application = (
+            db.query(models.TaskApplication)
+            .filter(
+                models.TaskApplication.task_id == task_id,
+                models.TaskApplication.applicant_id == previous_assignee_id,
+                models.TaskApplication.status == models.TaskApplicationStatus.approved,
+            )
+            .first()
+        )
+        if approved_application:
+            if current_user.id == previous_assignee_id:
+                approved_application.status = models.TaskApplicationStatus.rejected
+            else:
+                approved_application.status = models.TaskApplicationStatus.pending
+
     db.commit()
     db.refresh(task)
     return task
@@ -431,6 +609,11 @@ def delete_task(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot delete a task that has already been accepted",
         )
+
+    # Remove dependent records first to avoid FK constraint failures.
+    db.query(models.TaskApplication).filter(models.TaskApplication.task_id == task_id).delete()
+    db.query(models.Message).filter(models.Message.task_id == task_id).delete()
+    db.query(models.Review).filter(models.Review.task_id == task_id).delete()
 
     db.delete(task)
     db.commit()
