@@ -147,6 +147,9 @@ class Message(Base):
     task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     message = Column(Text, nullable=False)
+    file_url = Column(String(500), nullable=True)  # For PDFs/attachments from Cloudinary
+    file_name = Column(String(255), nullable=True)  # Original filename
+    seen_at = Column(DateTime, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     task = relationship("Task", back_populates="messages")

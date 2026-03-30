@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from sqlalchemy import text
 
 from .database import Base, engine
 from .routes import auth as auth_routes
@@ -16,6 +17,19 @@ from .routes import leaderboard as leaderboard_routes
 from .routes import premium as premium_routes
 
 
+def ensure_compatibility_columns() -> None:
+    """Create backward-compatible columns needed by newer app versions."""
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE messages ADD COLUMN IF NOT EXISTS seen_at TIMESTAMP NULL"))
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS idx_messages_task_sender_seen "
+                "ON messages(task_id, sender_id, seen_at)"
+            )
+        )
+
+
+ensure_compatibility_columns()
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -48,7 +62,7 @@ app.include_router(task_routes.router, prefix="/api/tasks", tags=["tasks"])
 app.include_router(user_routes.router, prefix="/api/users", tags=["users"])
 app.include_router(review_routes.router, prefix="/api/reviews", tags=["reviews"])
 app.include_router(contact_routes.router, prefix="/api/contact", tags=["contact"])
-app.include_router(chat_routes.router, prefix="/ws", tags=["chat"])
+app.include_router(chat_routes.router, prefix="/api/chat", tags=["chat"])
 app.include_router(platform_reviews_routes.router, prefix="/api/platform-reviews", tags=["platform-reviews"])
 app.include_router(leaderboard_routes.router, prefix="/api/leaderboard", tags=["leaderboard"])
 app.include_router(premium_routes.router, prefix="/api/premium", tags=["premium"])

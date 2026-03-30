@@ -121,21 +121,43 @@ export const fetchPlatformReviews = () => api.get("/platform-reviews/");
 export const createPlatformReview = (data) => api.post("/platform-reviews/", data);
 
 // Chat messages (REST for history)
-// WebSocket URL: derive from API base (http://127.0.0.1:8000/api -> ws://127.0.0.1:8000)
+// WebSocket URL: derive from API base (http://127.0.0.1:8000/api -> ws://127.0.0.1:8000/api)
 const getWsBase = () => {
   const env = import.meta.env.VITE_WS_URL || API_BASE_URL;
-  if (!env) return "ws://localhost:8000";
-  const withoutApi = env.replace(/\/api\/?$/, "").trim();
-  const wsBase = withoutApi.replace(/^https:/, "wss:").replace(/^http:/, "ws:");
+  if (!env) return "ws://localhost:8000/api";
+  const wsBase = env.replace(/^https:/, "wss:").replace(/^http:/, "ws:");
   return wsBase;
 };
 export const getChatWebSocketUrl = (taskId) => {
   const token = localStorage.getItem("token");
   const base = getWsBase();
   const tokenParam = token ? `token=${encodeURIComponent(token)}` : "";
-  return `${base}/ws/chat/${taskId}${tokenParam ? `?${tokenParam}` : ""}`;
+  return `${base}/chat/${taskId}${tokenParam ? `?${tokenParam}` : ""}`;
 };
 export const fetchTaskMessages = (taskId) => api.get(`/tasks/${taskId}/messages`);
+export const markTaskMessagesSeen = (taskId) => api.post(`/chat/${taskId}/seen`);
+
+// PDF upload to chat
+export const uploadPdfToChat = (taskId, file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api.post(`/chat/${taskId}/upload-pdf`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data"
+    }
+  });
+};
+
+// Image upload to chat
+export const uploadImageToChat = (taskId, file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api.post(`/chat/${taskId}/upload-image`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data"
+    }
+  });
+};
 
 // Premium features
 export const getTokenBalance = () => api.get("/premium/token-balance");

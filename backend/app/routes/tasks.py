@@ -10,6 +10,7 @@ from ..auth import get_current_user, get_current_user_optional
 from ..database import get_db
 from ..services.matching import match_percentage
 from ..services.proposals import ProposalContext, generate_proposal
+from ..services.chat import delete_task_chat_history
 
 
 router = APIRouter()
@@ -190,6 +191,22 @@ def get_task_messages(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the task creator and assigned user can access this chat",
         )
+
+    unseen_messages = (
+        db.query(models.Message)
+        .filter(
+            models.Message.task_id == task_id,
+            models.Message.sender_id != current_user.id,
+            models.Message.seen_at.is_(None),
+        )
+        .all()
+    )
+    if unseen_messages:
+        seen_time = datetime.utcnow()
+        for unseen in unseen_messages:
+            unseen.seen_at = seen_time
+        db.commit()
+
     messages = (
         db.query(models.Message)
         .filter(models.Message.task_id == task_id)
@@ -207,6 +224,9 @@ def get_task_messages(
                 sender_id=m.sender_id,
                 sender_name=sender.name or sender.email if sender else None,
                 message=m.message,
+                file_url=m.file_url,
+                file_name=m.file_name,
+                seen_at=m.seen_at,
                 timestamp=m.timestamp,
             )
         )
@@ -370,6 +390,9 @@ def update_task_status(
                 # Import here to avoid circular dependencies
                 from ..services.leaderboard import update_user_score
                 update_user_score(db, assigned_user)
+        
+        # Delete chat history and PDFs when task is completed
+        delete_task_chat_history(db, task_id)
 
     task.status = status_in.status
     db.commit()
@@ -603,6 +626,9 @@ def cancel_task_acceptance(
             detail="You are not allowed to cancel this task's acceptance",
         )
     
+    # Delete chat history and PDFs when acceptance is cancelled
+    delete_task_chat_history(db, task_id)
+    
     previous_assignee_id = task.assigned_to
 
     task.status = models.TaskStatus.open
@@ -649,9 +675,11 @@ def delete_task(
             detail="You cannot delete a task that has already been accepted",
         )
 
-    # Remove dependent records first to avoid FK constraint failures.
+    # Delete chat history and PDFs first
+    delete_task_chat_history(db, task_id)
+    
+    # Remove dependent records to avoid FK constraint failures.
     db.query(models.TaskApplication).filter(models.TaskApplication.task_id == task_id).delete()
-    db.query(models.Message).filter(models.Message.task_id == task_id).delete()
     db.query(models.Review).filter(models.Review.task_id == task_id).delete()
 
     db.delete(task)

@@ -218,6 +218,9 @@ class MessageOut(BaseModel):
     sender_id: int
     sender_name: Optional[str] = None
     message: str
+    file_url: Optional[str] = None
+    file_name: Optional[str] = None
+    seen_at: Optional[datetime] = None
     timestamp: datetime
 
     class Config:
