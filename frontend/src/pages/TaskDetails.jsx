@@ -174,6 +174,8 @@ const TaskDetails = () => {
     setError("");
     try {
       await rejectTaskApplication(id, applicationId);
+      const { data: taskData } = await fetchTaskById(id);
+      setTask(taskData);
       await refreshApplications();
     } catch (err) {
       setError(err.response?.data?.detail || "Could not reject this application right now.");
@@ -548,7 +550,7 @@ const TaskDetails = () => {
                             )}
                             <p className="text-xs uppercase text-slate-500 dark:text-slate-400">{app.status}</p>
                           </div>
-                          {task.status === "open" && app.status === "pending" && (
+                          {(task.status === "open" && app.status === "pending") && (
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleApproveApplication(app.id)}
@@ -563,6 +565,17 @@ const TaskDetails = () => {
                                 className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
                               >
                                 Reject
+                              </button>
+                            </div>
+                          )}
+                          {task.status === "accepted" && app.status === "approved" && task.assigned_to === app.applicant_id && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleRejectApplication(app.id)}
+                                disabled={saving}
+                                className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                              >
+                                Reject accepted user
                               </button>
                             </div>
                           )}

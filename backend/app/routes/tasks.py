@@ -600,6 +600,17 @@ def reject_task_application(
     if not application:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
 
+    # If an already-approved assignee is rejected, unassign and reopen the task.
+    if (
+        task.status == models.TaskStatus.accepted
+        and application.status == models.TaskApplicationStatus.approved
+        and task.assigned_to == application.applicant_id
+    ):
+        # Delete chat history and attachments between owner and assignee on rejection.
+        delete_task_chat_history(db, task_id)
+        task.status = models.TaskStatus.open
+        task.assigned_to = None
+
     application.status = models.TaskApplicationStatus.rejected
     db.commit()
     db.refresh(application)
@@ -645,10 +656,7 @@ def cancel_task_acceptance(
             .first()
         )
         if approved_application:
-            if current_user.id == previous_assignee_id:
-                approved_application.status = models.TaskApplicationStatus.rejected
-            else:
-                approved_application.status = models.TaskApplicationStatus.pending
+            approved_application.status = models.TaskApplicationStatus.rejected
 
     db.commit()
     db.refresh(task)
