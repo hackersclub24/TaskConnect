@@ -90,13 +90,11 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
           to="/"
           className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-90"
         >
-          <div className="h-10 w-10 overflow-hidden rounded-xl border border-slate-200 bg-slate-900/90 shadow-lg shadow-primary-900/40 dark:border-slate-700">
-            <img
-              src="/skillstreet-icon.jpeg"
-              alt="Skillstreet logo"
-              className="h-full w-full scale-110 object-cover object-top"
-            />
-          </div>
+          <img
+            src="/skillstreet-icon.png"
+            alt="Skillstreet logo"
+            className="h-10 w-10 object-contain"
+          />
           <div className="hidden flex-col leading-tight sm:flex">
             <span className="bg-gradient-to-r from-primary-600 via-sky-500 to-emerald-500 dark:from-primary-400 dark:via-sky-400 dark:to-emerald-400 bg-clip-text text-lg font-bold text-transparent font-heading">
               Skillstreet
