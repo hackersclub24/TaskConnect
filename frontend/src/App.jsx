@@ -37,10 +37,18 @@ const App = () => {
     <div className="min-h-screen">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(191,219,254,0.6),transparent_55%),radial-gradient(circle_at_bottom,_rgba(224,231,255,0.7),transparent_55%)] transition-colors duration-500 dark:bg-[radial-gradient(circle_at_top,_rgba(79,70,229,0.28),transparent_55%),radial-gradient(circle_at_bottom,_rgba(8,47,73,0.7),transparent_55%)]" />
       <Navbar theme={theme} onToggleTheme={toggleTheme} />
-      <main className="mx-auto max-w-6xl px-4 pb-10 pt-4">
+      <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 md:pb-10">
         <Routes>
           <Route
             path="/"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tasks"
             element={
               <PrivateRoute>
                 <Dashboard />
