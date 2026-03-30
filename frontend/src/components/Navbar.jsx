@@ -130,24 +130,24 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
             <Link
               to="/"
               onClick={closeMobileMenu}
-              className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-90"
+              className="flex min-w-0 flex-1 items-center gap-2 transition-opacity hover:opacity-90 sm:flex-none"
             >
               <img
                 src="/skillstreet-icon.png"
                 alt="Skillstreet logo"
                 className="h-10 w-10 object-contain"
               />
-              <div className="hidden flex-col leading-tight sm:flex">
+              <div className="min-w-0 flex flex-col leading-tight">
                 <span className="bg-gradient-to-r from-primary-600 via-sky-500 to-emerald-500 bg-clip-text text-lg font-bold text-transparent font-heading dark:from-primary-400 dark:via-sky-400 dark:to-emerald-400">
                   Skillstreet
                 </span>
-                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                <span className="hidden text-[11px] font-medium text-slate-500 dark:text-slate-400 sm:block">
                   Built for busy college deadlines
                 </span>
               </div>
             </Link>
 
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
                 onClick={onToggleTheme}
@@ -161,7 +161,7 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
               {token && tokenBalance !== null && (
                 <button
                   onClick={() => setShowPremiumModal(true)}
-                  className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20 sm:px-3"
+                  className="hidden items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20 sm:flex sm:px-3"
                 >
                   <Coins className="h-4 w-4" />
                   <span className="hidden text-xs font-semibold sm:inline">{tokenBalance}</span>
