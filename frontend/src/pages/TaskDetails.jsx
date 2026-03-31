@@ -70,6 +70,8 @@ const TaskDetails = () => {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
   const [applications, setApplications] = useState([]);
+  const [approveTarget, setApproveTarget] = useState(null);
+  const [rejectTarget, setRejectTarget] = useState(null);
 
   useEffect(() => {
     if (!token) {
@@ -167,6 +169,53 @@ const TaskDetails = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const openApproveConfirmation = (application) => {
+    setApproveTarget(application);
+  };
+
+  const closeApproveConfirmation = () => {
+    if (saving) return;
+    setApproveTarget(null);
+  };
+
+  const confirmApproveApplication = async () => {
+    if (!approveTarget) return;
+    await handleApproveApplication(approveTarget.id);
+    setApproveTarget(null);
+  };
+
+  const openRejectConfirmation = (application) => {
+    setRejectTarget(application);
+  };
+
+  const closeRejectConfirmation = () => {
+    if (saving) return;
+    setRejectTarget(null);
+  };
+
+  useEffect(() => {
+    if (!approveTarget && !rejectTarget) return;
+
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      if (approveTarget) {
+        closeApproveConfirmation();
+      }
+      if (rejectTarget) {
+        closeRejectConfirmation();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [approveTarget, rejectTarget, saving]);
+
+  const confirmRejectApplication = async () => {
+    if (!rejectTarget) return;
+    await handleRejectApplication(rejectTarget.id);
+    setRejectTarget(null);
   };
 
   const handleRejectApplication = async (applicationId) => {
@@ -553,14 +602,14 @@ const TaskDetails = () => {
                           {(task.status === "open" && app.status === "pending") && (
                             <div className="flex gap-2">
                               <button
-                                onClick={() => handleApproveApplication(app.id)}
+                                onClick={() => openApproveConfirmation(app)}
                                 disabled={saving}
                                 className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
                               >
                                 Approve
                               </button>
                               <button
-                                onClick={() => handleRejectApplication(app.id)}
+                                onClick={() => openRejectConfirmation(app)}
                                 disabled={saving}
                                 className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
                               >
@@ -571,7 +620,7 @@ const TaskDetails = () => {
                           {task.status === "accepted" && app.status === "approved" && task.assigned_to === app.applicant_id && (
                             <div className="flex gap-2">
                               <button
-                                onClick={() => handleRejectApplication(app.id)}
+                                onClick={() => openRejectConfirmation(app)}
                                 disabled={saving}
                                 className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
                               >
@@ -778,6 +827,96 @@ const TaskDetails = () => {
           </div>
         )}
       </div>
+
+      {approveTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4"
+          onClick={closeApproveConfirmation}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-base font-semibold font-heading text-slate-900 dark:text-slate-100">
+              Confirm assignee
+            </h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              Are you sure you want to assign this task to{" "}
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
+                {approveTarget.applicant_name || approveTarget.applicant_email || `User #${approveTarget.applicant_id}`}
+              </span>
+              ?
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              This will mark the task as accepted and notify this applicant.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeApproveConfirmation}
+                disabled={saving}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmApproveApplication}
+                disabled={saving}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+              >
+                {saving ? "Confirming..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rejectTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4"
+          onClick={closeRejectConfirmation}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-base font-semibold font-heading text-slate-900 dark:text-slate-100">
+              Confirm rejection
+            </h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              Are you sure you want to reject{" "}
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
+                {rejectTarget.applicant_name || rejectTarget.applicant_email || `User #${rejectTarget.applicant_id}`}
+              </span>
+              ?
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {task?.status === "accepted" && rejectTarget.status === "approved"
+                ? "This will remove the current assignee and reopen the task."
+                : "This applicant will no longer be considered for this task."}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeRejectConfirmation}
+                disabled={saving}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmRejectApplication}
+                disabled={saving}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+              >
+                {saving ? "Rejecting..." : "Confirm reject"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

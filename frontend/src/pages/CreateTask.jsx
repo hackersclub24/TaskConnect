@@ -12,6 +12,7 @@ const CATEGORIES = [
 const CreateTask = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const isDark = (localStorage.getItem("theme") || "dark") === "dark";
 
   const [form, setForm] = useState({
     title: "",
@@ -63,10 +64,10 @@ const CreateTask = () => {
   return (
     <div className="mx-auto max-w-4xl py-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-50 sm:text-3xl">
+        <h1 className={`text-2xl font-semibold sm:text-3xl ${isDark ? "text-slate-50" : "text-slate-900"}`}>
           Post a task for your next deadline
         </h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className={`mt-1 text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
           Share what you&apos;re stuck on—an assignment, project, event, or club
           work—and get help from other students.
         </p>
@@ -79,10 +80,14 @@ const CreateTask = () => {
       <div className="grid gap-6 lg:grid-cols-[1.4fr,1fr]">
         <form
           onSubmit={handleSubmit}
-          className="space-y-5 rounded-2xl border border-slate-800/80 bg-slate-900/90 p-6 shadow-xl shadow-black/40"
+          className={`space-y-5 rounded-2xl p-6 ${
+            isDark
+              ? "border border-slate-800/80 bg-slate-900/90 shadow-xl shadow-black/40"
+              : "border border-slate-200 bg-white shadow-lg shadow-slate-200/60"
+          }`}
         >
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+            <label className={`mb-1.5 flex items-center gap-2 text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
               <FileText className="h-3.5 w-3.5" />
               Title
             </label>
@@ -96,7 +101,7 @@ const CreateTask = () => {
             />
           </div>
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+            <label className={`mb-1.5 flex items-center gap-2 text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
               Description
             </label>
             <textarea
@@ -111,7 +116,7 @@ const CreateTask = () => {
 
           {/* Category selection */}
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-300">
+            <label className={`mb-2 block text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
               Category
             </label>
             <div className="grid gap-2 sm:grid-cols-3">
@@ -126,7 +131,9 @@ const CreateTask = () => {
                     className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-all ${
                       isSelected
                         ? "border-primary-600 bg-primary-600/40 text-primary-100"
-                        : "border-slate-700 bg-slate-900/60 text-slate-400 hover:border-slate-600 hover:bg-slate-800/60"
+                        : isDark
+                          ? "border-slate-700 bg-slate-900/60 text-slate-400 hover:border-slate-600 hover:bg-slate-800/60"
+                          : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white"
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -138,7 +145,13 @@ const CreateTask = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2 transition-colors hover:bg-slate-800/60">
+            <label
+              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2 transition-colors ${
+                isDark
+                  ? "border-slate-700 bg-slate-900/60 hover:bg-slate-800/60"
+                  : "border-slate-200 bg-slate-50 hover:bg-white"
+              }`}
+            >
               <input
                 type="checkbox"
                 name="inter_college_only"
@@ -146,8 +159,8 @@ const CreateTask = () => {
                 onChange={handleChange}
                 className="h-4 w-4 rounded border-slate-600"
               />
-              <Building2 className="h-4 w-4 text-slate-400" />
-              <span className="text-sm text-slate-300">Inter-College Work only</span>
+              <Building2 className={`h-4 w-4 ${isDark ? "text-slate-400" : "text-slate-600"}`} />
+              <span className={`text-sm ${isDark ? "text-slate-300" : "text-slate-700"}`}>Inter-College Work only</span>
             </label>
             <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 transition-colors hover:bg-red-500/20">
               <input
@@ -164,7 +177,7 @@ const CreateTask = () => {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+              <label className={`mb-1.5 flex items-center gap-2 text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                 <Calendar className="h-3.5 w-3.5" />
                 Deadline
               </label>
@@ -176,7 +189,7 @@ const CreateTask = () => {
               />
             </div>
             <div>
-              <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-300">
+              <label className={`mb-1.5 flex items-center gap-2 text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                 <IndianRupee className="h-3.5 w-3.5" />
                 Reward (₹) — for paid tasks
               </label>
@@ -200,8 +213,14 @@ const CreateTask = () => {
           </button>
         </form>
 
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5 text-sm text-slate-300 shadow-lg">
-          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-slate-100">
+        <div
+          className={`rounded-2xl p-5 text-sm shadow-lg ${
+            isDark
+              ? "border border-slate-800/80 bg-slate-950/70 text-slate-300"
+              : "border border-slate-200 bg-white text-slate-700"
+          }`}
+        >
+          <h2 className={`mb-3 flex items-center gap-2 text-base font-semibold ${isDark ? "text-slate-100" : "text-slate-900"}`}>
             <Briefcase className="h-4 w-4" />
             Tips for clearer tasks
           </h2>
@@ -219,7 +238,7 @@ const CreateTask = () => {
               Be honest about the timeline and effort.
             </li>
           </ul>
-          <p className="text-xs text-slate-500">
+          <p className={`text-xs ${isDark ? "text-slate-500" : "text-slate-500"}`}>
             Clear tasks get accepted faster and lead to better collaboration
             between students.
           </p>
