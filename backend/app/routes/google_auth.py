@@ -1,7 +1,7 @@
 import os
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 from sqlalchemy.orm import Session
@@ -17,7 +17,11 @@ router = APIRouter(tags=["auth"])
 
 @router.post("/auth/google", response_model=schemas.GoogleAuthResponse)
 @router.post("/api/auth/google", response_model=schemas.GoogleAuthResponse)
-def google_login(payload: schemas.GoogleTokenIn, db: Session = Depends(get_db)):
+def google_login(
+    payload: schemas.GoogleTokenIn,
+    request: Request,
+    db: Session = Depends(get_db),
+):
     try:
         project_id = os.getenv("FIREBASE_PROJECT_ID")
         token_data = id_token.verify_firebase_token(
@@ -59,7 +63,12 @@ def google_login(payload: schemas.GoogleTokenIn, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
 
-    tokens = create_user_tokens(user.id)
+    tokens = create_user_tokens(
+        db,
+        user.id,
+        user_agent=request.headers.get("user-agent"),
+        ip_address=request.client.host if request.client else None,
+    )
 
     return {
         "success": True,
