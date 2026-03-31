@@ -17,6 +17,15 @@ from ..services.matching import match_percentage
 router = APIRouter()
 
 
+def _get_user_by_ref(db: Session, user_ref: str) -> Optional[models.User]:
+    user = None
+    if user_ref.isdigit():
+        user = db.query(models.User).filter(models.User.id == int(user_ref)).first()
+    if user is None:
+        user = db.query(models.User).filter(models.User.slug == user_ref).first()
+    return user
+
+
 @router.patch("/me", response_model=schemas.UserOut)
 def update_current_user(
     update_data: schemas.UserUpdate,
@@ -182,21 +191,23 @@ def recommended_tasks(
     return [{"task": t, "match_percentage": pct} for pct, t in top]
 
 
-@router.get("/{user_id}", response_model=schemas.UserOut)
-def get_user(user_id: int, db: Session = Depends(get_db)):
+@router.get("/{user_ref}", response_model=schemas.UserOut)
+def get_user(user_ref: str, db: Session = Depends(get_db)):
     """Get public user profile (for viewing reviews, etc.)."""
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    user = _get_user_by_ref(db, user_ref)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
 
 
-@router.get("/{user_id}/stats", response_model=schemas.UserStatsOut)
-def get_user_stats(user_id: int, db: Session = Depends(get_db)):
+@router.get("/{user_ref}/stats", response_model=schemas.UserStatsOut)
+def get_user_stats(user_ref: str, db: Session = Depends(get_db)):
     """Get user statistics: total posted, accepted, completed AND full task lists."""
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    user = _get_user_by_ref(db, user_ref)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    user_id = user.id
 
     posted_tasks = db.query(models.Task).options(joinedload(models.Task.owner)).filter(models.Task.owner_id == user_id).all()
     accepted_tasks = db.query(models.Task).options(joinedload(models.Task.owner)).filter(models.Task.assigned_to == user_id).all()

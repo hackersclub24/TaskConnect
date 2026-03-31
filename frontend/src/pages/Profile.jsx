@@ -5,7 +5,7 @@ import { fetchUserById, fetchUserReviews, fetchUserStats, updateUserProfile, fet
 import ProfileImageUpload from "../components/ProfileImageUpload";
 
 const Profile = () => {
-  const { userId } = useParams();
+  const { userRef } = useParams();
   
   const [user, setUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -41,9 +41,9 @@ const Profile = () => {
           { data: reviewsData },
           { data: statsData }
         ] = await Promise.all([
-          fetchUserById(userId),
-          fetchUserReviews(userId),
-          fetchUserStats(userId)
+          fetchUserById(userRef),
+          fetchUserReviews(userRef),
+          fetchUserStats(userRef)
         ]);
 
         let current = null;
@@ -71,9 +71,9 @@ const Profile = () => {
       }
     };
     load();
-  }, [userId]);
+  }, [userRef]);
 
-  const isOwner = currentUser && String(currentUser.id) === String(userId);
+  const isOwner = currentUser && user && String(currentUser.id) === String(user.id);
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -427,7 +427,7 @@ const Profile = () => {
                   {(activeTab === 'posted' ? stats.posted_tasks : stats.accepted_tasks).map(task => (
                     <Link 
                       key={task.id} 
-                      to={`/tasks/${task.id}`}
+                      to={`/tasks/${task.slug || task.id}`}
                       className="block bg-white border border-slate-200 hover:border-slate-300 rounded-xl p-4 transition-all hover:bg-slate-50 hover:-translate-y-0.5 shadow-sm dark:bg-slate-900/40 dark:border-slate-800/80 dark:hover:border-slate-700 dark:hover:bg-slate-800/40 dark:shadow-none"
                     >
                       <div className="flex justify-between items-start gap-4 mb-2">

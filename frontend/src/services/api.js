@@ -179,18 +179,18 @@ export const generateProposal = (id) => api.post(`/tasks/${id}/proposal`);
 export const fetchRecommendedTasks = (userId) =>
   api.get(`/users/${userId}/recommended-tasks`);
 
-export const fetchUserById = (userId) => api.get(`/users/${userId}`);
+export const fetchUserById = (userRef) => api.get(`/users/${userRef}`);
 
 export const updateUserProfile = (data) => api.patch("/users/me", data);
 
 export const fetchCollegeSuggestions = (query = "") =>
   api.get("/users/colleges", { params: { q: query } });
 
-export const fetchUserStats = (userId) => api.get(`/users/${userId}/stats`);
+export const fetchUserStats = (userRef) => api.get(`/users/${userRef}/stats`);
 
 // Reviews
 export const createReview = (data) => api.post("/reviews/", data);
-export const fetchUserReviews = (userId) => api.get(`/reviews/user/${userId}`);
+export const fetchUserReviews = (userRef) => api.get(`/reviews/user/${userRef}`);
 
 // Leaderboard
 export const fetchLeaderboard = (timeframe = "global", filter = "all") => 

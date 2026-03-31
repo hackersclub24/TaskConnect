@@ -12,6 +12,15 @@ from ..database import get_db
 router = APIRouter()
 
 
+def _resolve_user_id(db: Session, user_ref: str) -> int | None:
+    if user_ref.isdigit():
+        user = db.query(models.User).filter(models.User.id == int(user_ref)).first()
+        if user:
+            return user.id
+    user = db.query(models.User).filter(models.User.slug == user_ref).first()
+    return user.id if user else None
+
+
 @router.post("/", response_model=schemas.ReviewOut, status_code=status.HTTP_201_CREATED)
 def create_review(
     review_in: schemas.ReviewCreate,
@@ -52,13 +61,17 @@ def create_review(
     return review
 
 
-@router.get("/user/{user_id}", response_model=List[schemas.ReviewWithReviewer])
+@router.get("/user/{user_ref}", response_model=List[schemas.ReviewWithReviewer])
 def get_user_reviews(
-    user_id: int,
+    user_ref: str,
     db: Session = Depends(get_db),
     limit: int = Query(20, ge=1, le=50),
 ):
     """Get all reviews received by a user (for profile display)."""
+    user_id = _resolve_user_id(db, user_ref)
+    if user_id is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
     reviews = (
         db.query(models.Review)
         .options(

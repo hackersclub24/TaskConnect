@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+import re
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
@@ -23,6 +24,32 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 optional_oauth2 = HTTPBearer(auto_error=False)
 
 
+def _slugify_user(value: str) -> str:
+    value = (value or "").strip().lower()
+    value = re.sub(r"[^a-z0-9\s-]", "", value)
+    value = re.sub(r"[\s_-]+", "-", value)
+    return value.strip("-") or "user"
+
+
+def build_unique_user_slug(
+    db: Session,
+    seed: str,
+    exclude_user_id: int | None = None,
+) -> str:
+    base_slug = _slugify_user(seed)
+    slug = base_slug
+    suffix = 2
+
+    while True:
+        q = db.query(models.User).filter(models.User.slug == slug)
+        if exclude_user_id is not None:
+            q = q.filter(models.User.id != exclude_user_id)
+        if not q.first():
+            return slug
+        slug = f"{base_slug}-{suffix}"
+        suffix += 1
+
+
 def authenticate_user(db: Session, email: str, password: str):
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
@@ -36,6 +63,7 @@ def create_user(
     db: Session,
     email: str,
     password: str,
+    name: str | None = None,
     phone: str | None = None,
     skills: str | None = None,
     college_name: str | None = None,
@@ -47,9 +75,12 @@ def create_user(
             detail="Email already registered",
         )
     hashed_password = get_password_hash(password)
+    slug_seed = name if name and name.strip() else email.split("@")[0]
     user = models.User(
+        slug=build_unique_user_slug(db, slug_seed),
         email=email,
         hashed_password=hashed_password,
+        name=name,
         phone=phone,
         skills=skills,
         college_name=college_name,

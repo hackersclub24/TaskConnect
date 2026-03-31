@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from datetime import datetime, timedelta
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
@@ -14,6 +15,41 @@ from ..services.chat import delete_task_chat_history
 
 
 router = APIRouter()
+
+
+def _slugify(value: str) -> str:
+    value = (value or "").strip().lower()
+    value = re.sub(r"[^a-z0-9\s-]", "", value)
+    value = re.sub(r"[\s_-]+", "-", value)
+    return value.strip("-") or "task"
+
+
+def _build_unique_task_slug(db: Session, title: str, exclude_task_id: Optional[int] = None) -> str:
+    base_slug = _slugify(title)
+    slug = base_slug
+    suffix = 2
+
+    while True:
+        q = db.query(models.Task).filter(models.Task.slug == slug)
+        if exclude_task_id is not None:
+            q = q.filter(models.Task.id != exclude_task_id)
+        if not q.first():
+            return slug
+        slug = f"{base_slug}-{suffix}"
+        suffix += 1
+
+
+def _get_task_by_ref(db: Session, task_ref: str, with_owner: bool = False) -> Optional[models.Task]:
+    query = db.query(models.Task)
+    if with_owner:
+        query = query.options(joinedload(models.Task.owner))
+
+    task = None
+    if task_ref.isdigit():
+        task = query.filter(models.Task.id == int(task_ref)).first()
+    if task is None:
+        task = query.filter(models.Task.slug == task_ref).first()
+    return task
 
 
 def _serialize_application(app: models.TaskApplication, db: Session) -> schemas.TaskApplicationOut:
@@ -156,13 +192,13 @@ def get_urgent_tasks(
     return [schemas.UrgentTaskOut(**u) for u in urgent_tasks_response]
 
 
-@router.get("/{task_id}/contacts", response_model=schemas.TaskContacts)
+@router.get("/{task_ref}/contacts", response_model=schemas.TaskContacts)
 def get_task_contacts(
-    task_id: int,
+    task_ref: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
@@ -176,16 +212,17 @@ def get_task_contacts(
     return schemas.TaskContacts(owner_phone=owner_phone, acceptor_phone=acceptor_phone)
 
 
-@router.get("/{task_id}/messages", response_model=List[schemas.MessageOut])
+@router.get("/{task_ref}/messages", response_model=List[schemas.MessageOut])
 def get_task_messages(
-    task_id: int,
+    task_ref: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """Get chat messages for a task. Only owner or assigned user can access."""
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task_id = task.id
     if current_user.id != task.owner_id and current_user.id != task.assigned_to:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -233,25 +270,25 @@ def get_task_messages(
     return result
 
 
-@router.get("/{task_id}", response_model=schemas.TaskOut)
-def get_task(task_id: int, db: Session = Depends(get_db)):
+@router.get("/{task_ref}", response_model=schemas.TaskOut)
+def get_task(task_ref: str, db: Session = Depends(get_db)):
     """Get single task by ID. Must be after more specific routes like /messages."""
-    task = db.query(models.Task).options(joinedload(models.Task.owner)).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref, with_owner=True)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     return task
 
 
 @router.get(
-    "/{task_id}/recommended-freelancers",
+    "/{task_ref}/recommended-freelancers",
     response_model=list[schemas.RecommendedFreelancerOut],
 )
 def recommended_freelancers(
-    task_id: int,
+    task_ref: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
@@ -275,13 +312,13 @@ def recommended_freelancers(
     ]
 
 
-@router.post("/{task_id}/proposal", response_model=schemas.ProposalOut)
+@router.post("/{task_ref}/proposal", response_model=schemas.ProposalOut)
 def generate_task_proposal(
-    task_id: int,
+    task_ref: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
@@ -309,6 +346,7 @@ def create_task(
     inter_college_only = task_in.inter_college_only or False
     is_urgent = task_in.is_urgent or False
     task = models.Task(
+        slug=_build_unique_task_slug(db, task_in.title),
         title=task_in.title,
         description=task_in.description,
         deadline=deadline,
@@ -324,14 +362,14 @@ def create_task(
     return task
 
 
-@router.patch("/{task_id}", response_model=schemas.TaskOut)
+@router.patch("/{task_ref}", response_model=schemas.TaskOut)
 def update_task(
-    task_id: int,
+    task_ref: str,
     task_in: schemas.TaskUpdate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     if task.owner_id != current_user.id:
@@ -357,21 +395,25 @@ def update_task(
     for field, value in update_data.items():
         setattr(task, field, value)
 
+    if "title" in update_data and update_data["title"]:
+        task.slug = _build_unique_task_slug(db, update_data["title"], exclude_task_id=task.id)
+
     db.commit()
     db.refresh(task)
     return task
 
 
-@router.patch("/{task_id}/status", response_model=schemas.TaskOut)
+@router.patch("/{task_ref}/status", response_model=schemas.TaskOut)
 def update_task_status(
-    task_id: int,
+    task_ref: str,
     status_in: schemas.TaskUpdateStatus,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task_id = task.id
     if task.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -400,15 +442,16 @@ def update_task_status(
     return task
 
 
-@router.post("/{task_id}/apply", response_model=schemas.TaskApplicationOut)
+@router.post("/{task_ref}/apply", response_model=schemas.TaskApplicationOut)
 def apply_for_task(
-    task_id: int,
+    task_ref: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task_id = task.id
     if task.status != models.TaskStatus.open:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -448,25 +491,26 @@ def apply_for_task(
     return _serialize_application(app, db)
 
 
-@router.post("/{task_id}/accept", response_model=schemas.TaskApplicationOut)
+@router.post("/{task_ref}/accept", response_model=schemas.TaskApplicationOut)
 def accept_task_legacy_alias(
-    task_id: int,
+    task_ref: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     # Backward-compatible alias for old frontend action name.
-    return apply_for_task(task_id, db, current_user)
+    return apply_for_task(task_ref, db, current_user)
 
 
-@router.get("/{task_id}/applications", response_model=list[schemas.TaskApplicationOut])
+@router.get("/{task_ref}/applications", response_model=list[schemas.TaskApplicationOut])
 def list_task_applications(
-    task_id: int,
+    task_ref: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task_id = task.id
 
     query = db.query(models.TaskApplication).filter(models.TaskApplication.task_id == task_id)
     if task.owner_id != current_user.id:
@@ -476,16 +520,17 @@ def list_task_applications(
     return [_serialize_application(app, db) for app in applications]
 
 
-@router.delete("/{task_id}/applications/{application_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{task_ref}/applications/{application_id}", status_code=status.HTTP_204_NO_CONTENT)
 def withdraw_task_application(
-    task_id: int,
+    task_ref: str,
     application_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task_id = task.id
 
     application = (
         db.query(models.TaskApplication)
@@ -515,16 +560,17 @@ def withdraw_task_application(
     return None
 
 
-@router.post("/{task_id}/applications/{application_id}/approve", response_model=schemas.TaskOut)
+@router.post("/{task_ref}/applications/{application_id}/approve", response_model=schemas.TaskOut)
 def approve_task_application(
-    task_id: int,
+    task_ref: str,
     application_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task_id = task.id
     if task.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -573,16 +619,17 @@ def approve_task_application(
     return task
 
 
-@router.post("/{task_id}/applications/{application_id}/reject", response_model=schemas.TaskApplicationOut)
+@router.post("/{task_ref}/applications/{application_id}/reject", response_model=schemas.TaskApplicationOut)
 def reject_task_application(
-    task_id: int,
+    task_ref: str,
     application_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task_id = task.id
     if task.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -617,15 +664,16 @@ def reject_task_application(
     return _serialize_application(application, db)
 
 
-@router.post("/{task_id}/cancel-acceptance", response_model=schemas.TaskOut)
+@router.post("/{task_ref}/cancel-acceptance", response_model=schemas.TaskOut)
 def cancel_task_acceptance(
-    task_id: int,
+    task_ref: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task_id = task.id
     if task.status != models.TaskStatus.accepted:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -663,15 +711,16 @@ def cancel_task_acceptance(
     return task
 
 
-@router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{task_ref}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(
-    task_id: int,
+    task_ref: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    task = _get_task_by_ref(db, task_ref)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task_id = task.id
     if task.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

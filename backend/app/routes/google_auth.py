@@ -7,7 +7,7 @@ from google.oauth2 import id_token
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
-from ..auth import create_user_tokens
+from ..auth import create_user_tokens, build_unique_user_slug
 from ..core.security import get_password_hash
 from ..database import get_db
 
@@ -54,12 +54,19 @@ def google_login(
 
     if not user:
         # Mock-friendly create flow for first Google login.
+        slug_seed = name if name and name.strip() else email.split("@")[0]
         user = models.User(
+            slug=build_unique_user_slug(db, slug_seed),
             email=email,
             name=name,
             hashed_password=get_password_hash(secrets.token_urlsafe(32)),
         )
         db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not user.slug:
+        slug_seed = user.name if user.name and user.name.strip() else user.email.split("@")[0]
+        user.slug = build_unique_user_slug(db, slug_seed, exclude_user_id=user.id)
         db.commit()
         db.refresh(user)
 

@@ -25,6 +25,7 @@ class UserLogin(BaseModel):
 
 class UserOut(UserBase):
     id: int
+    slug: str
     name: Optional[str] = None
     bio: Optional[str] = None
     phone: Optional[str] = None
@@ -80,6 +81,7 @@ class TaskUpdateStatus(BaseModel):
 class TaskOwnerBrief(BaseModel):
     """Brief owner info for task cards (includes college for 'From Your College' badge)."""
     id: int
+    slug: Optional[str] = None
     college_name: Optional[str] = None
 
     class Config:
@@ -88,11 +90,13 @@ class TaskOwnerBrief(BaseModel):
 
 class TaskOut(TaskBase):
     id: int
+    slug: str
     status: TaskStatus
     owner_id: int
     assigned_to: Optional[int] = None
     created_at: datetime
     owner: Optional[TaskOwnerBrief] = None
+    assigned_user: Optional[TaskOwnerBrief] = None
 
     is_urgent: Optional[bool] = False
     premium_early_access: Optional[bool] = False
@@ -121,6 +125,7 @@ class TaskContacts(BaseModel):
 
 class UserPublic(BaseModel):
     id: int
+    slug: Optional[str] = None
     name: Optional[str] = None
     email: EmailStr
     bio: Optional[str] = None

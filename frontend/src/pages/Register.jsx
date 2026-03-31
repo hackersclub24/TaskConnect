@@ -164,9 +164,9 @@ const Register = () => {
               "Google account connected. You can add skills and bio from Profile."
             );
 
-            const userId = backendResponse?.user?.id;
-            if (userId) {
-              navigate(`/profile/${userId}`);
+            const userRef = backendResponse?.user?.slug || backendResponse?.user?.id;
+            if (userRef) {
+              navigate(`/profile/${userRef}`);
               return;
             }
 

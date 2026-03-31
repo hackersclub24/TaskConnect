@@ -60,7 +60,7 @@ const App = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/reviews" element={<PlatformReviews />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/profile/:userId" element={<Profile />} />
+          <Route path="/profile/:userRef" element={<Profile />} />
           <Route
             path="/create-task"
             element={
@@ -70,7 +70,7 @@ const App = () => {
             }
           />
           <Route
-            path="/tasks/:id"
+            path="/tasks/:taskRef"
             element={
               <PrivateRoute>
                 <TaskDetails />

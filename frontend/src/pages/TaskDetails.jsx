@@ -38,7 +38,7 @@ const categoryConfig = {
 };
 
 const TaskDetails = () => {
-  const { id } = useParams();
+  const { taskRef } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -85,11 +85,11 @@ const TaskDetails = () => {
           { data: recData },
           { data: applicationData }
         ] = await Promise.all([
-          fetchTaskById(id),
+          fetchTaskById(taskRef),
           fetchCurrentUser(),
-          fetchTaskContacts(id),
-          fetchRecommendedFreelancers(id),
-          fetchTaskApplications(id)
+          fetchTaskContacts(taskRef),
+          fetchRecommendedFreelancers(taskRef),
+          fetchTaskApplications(taskRef)
         ]);
         setTask(taskData);
         setCurrentUser(userData);
@@ -114,11 +114,11 @@ const TaskDetails = () => {
       }
     };
     load();
-  }, [id, navigate, token]);
+  }, [taskRef, navigate, token]);
 
   const refreshApplications = async () => {
     try {
-      const { data } = await fetchTaskApplications(id);
+      const { data } = await fetchTaskApplications(taskRef);
       setApplications(data || []);
     } catch {
       // Ignore refresh failures and keep previous state
@@ -129,7 +129,7 @@ const TaskDetails = () => {
     setAccepting(true);
     setError("");
     try {
-      await applyForTask(id);
+      await applyForTask(taskRef);
       await refreshApplications();
     } catch (err) {
       setError(err.response?.data?.detail || "Could not apply for this task right now.");
@@ -146,7 +146,7 @@ const TaskDetails = () => {
     setAccepting(true);
     setError("");
     try {
-      await withdrawTaskApplication(id, myApplication.id);
+      await withdrawTaskApplication(taskRef, myApplication.id);
       await refreshApplications();
     } catch (err) {
       setError(err.response?.data?.detail || "Could not withdraw your request right now.");
@@ -159,7 +159,7 @@ const TaskDetails = () => {
     setSaving(true);
     setError("");
     try {
-      const { data } = await approveTaskApplication(id, applicationId);
+      const { data } = await approveTaskApplication(taskRef, applicationId);
       setTask(data);
       await refreshApplications();
     } catch (err) {
@@ -173,8 +173,8 @@ const TaskDetails = () => {
     setSaving(true);
     setError("");
     try {
-      await rejectTaskApplication(id, applicationId);
-      const { data: taskData } = await fetchTaskById(id);
+      await rejectTaskApplication(taskRef, applicationId);
+      const { data: taskData } = await fetchTaskById(taskRef);
       setTask(taskData);
       await refreshApplications();
     } catch (err) {
@@ -191,7 +191,7 @@ const TaskDetails = () => {
     setAccepting(true);
     setError("");
     try {
-      const { data } = await cancelTaskAcceptance(id);
+      const { data } = await cancelTaskAcceptance(taskRef);
       setTask(data);
       await refreshApplications();
       if (isOwner) {
@@ -227,7 +227,7 @@ const TaskDetails = () => {
         category: editForm.category,
         inter_college_only: editForm.inter_college_only
       };
-      const { data } = await updateTask(id, payload);
+      const { data } = await updateTask(taskRef, payload);
       setTask(data);
       setEditing(false);
     } catch (err) {
@@ -242,7 +242,7 @@ const TaskDetails = () => {
     setSaving(true);
     setError("");
     try {
-      const { data } = await updateTaskStatus(id, nextStatus);
+      const { data } = await updateTaskStatus(taskRef, nextStatus);
       setTask(data);
     } catch (err) {
       setError(err.response?.data?.detail || "Could not update the status of this task right now.");
@@ -258,7 +258,7 @@ const TaskDetails = () => {
     setDeleting(true);
     setError("");
     try {
-      await deleteTask(id);
+      await deleteTask(taskRef);
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.detail || "Could not delete this task right now.");
@@ -270,7 +270,7 @@ const TaskDetails = () => {
     setProposalLoading(true);
     setError("");
     try {
-      const { data } = await generateProposal(id);
+      const { data } = await generateProposal(taskRef);
       setProposal(data.proposal || "");
     } catch (err) {
       setError(err.response?.data?.detail || "Could not generate a proposal right now. Please try again.");
@@ -285,7 +285,7 @@ const TaskDetails = () => {
     try {
       await createReview({
         reviewee_id: revieweeId,
-        task_id: parseInt(id, 10),
+        task_id: task.id,
         rating: reviewForm.rating,
         text: reviewForm.text || null
       });
@@ -402,7 +402,7 @@ const TaskDetails = () => {
             <User className="h-4 w-4 text-slate-400 dark:text-slate-500" />
             <span className="text-slate-500 dark:text-slate-400">Posted by:</span>
             <Link
-              to={`/profile/${task.owner_id}`}
+              to={`/profile/${task.owner?.slug || task.owner_id}`}
               className="font-medium text-primary-600 hover:text-primary-700 hover:underline dark:text-primary-400 dark:hover:text-primary-300"
             >
               View profile
@@ -413,7 +413,7 @@ const TaskDetails = () => {
               <User className="h-4 w-4 text-slate-400 dark:text-slate-500" />
               <span className="text-slate-500 dark:text-slate-400">Accepted by:</span>
               <Link
-                to={`/profile/${task.assigned_to}`}
+                to={`/profile/${task.assigned_user?.slug || task.assigned_to}`}
                 className="font-medium text-primary-600 hover:text-primary-700 hover:underline dark:text-primary-400 dark:hover:text-primary-300"
               >
                 View profile
@@ -592,7 +592,7 @@ const TaskDetails = () => {
         {canAccessChat && (
           <div className="mt-6">
             <TaskChat
-              taskId={parseInt(id, 10)}
+              taskId={task.id}
               currentUserId={currentUser?.id}
               canAccess={canAccessChat}
             />
@@ -758,7 +758,7 @@ const TaskDetails = () => {
               {recommendedFreelancers.slice(0, 4).map((rec) => (
                 <Link
                   key={rec.freelancer.id}
-                  to={`/profile/${rec.freelancer.id}`}
+                  to={`/profile/${rec.freelancer.slug || rec.freelancer.id}`}
                   className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950/40 dark:hover:bg-slate-800/50 dark:shadow-none"
                 >
                   <div className="min-w-0">

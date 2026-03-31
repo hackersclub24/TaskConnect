@@ -30,10 +30,11 @@ const TaskCard = ({ task, currentUserCollege, showCollegeBadge }) => {
     task.owner.college_name === currentUserCollege;
   const category = categoryConfig[task.category || "paid"] || categoryConfig.paid;
   const CategoryIcon = category.icon;
+  const taskRef = task.slug || task.id;
 
   return (
     <Link
-      to={`/tasks/${task.id}`}
+      to={`/tasks/${taskRef}`}
       className="group flex min-h-0 flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary-500/30 hover:shadow-xl hover:shadow-primary-900/5 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-primary-500/40 dark:hover:bg-slate-900/90 dark:hover:shadow-primary-900/10"
     >
       {/* Top row: title, status, badges - prevent overlap with flex-wrap */}

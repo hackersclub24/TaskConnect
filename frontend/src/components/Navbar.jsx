@@ -30,7 +30,7 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
-  const [currentUserId, setCurrentUserId] = useState(() => {
+  const [currentUserRef, setCurrentUserRef] = useState(() => {
     if (token) {
       try {
         const base64Url = token.split(".")[1];
@@ -42,7 +42,7 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
             .join("")
         );
         const payload = JSON.parse(jsonPayload);
-        return payload.sub || null;
+        return payload.sub ? String(payload.sub) : null;
       } catch {
         return null;
       }
@@ -66,18 +66,21 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
   };
 
   useEffect(() => {
-    if (token && !currentUserId) {
-      const getMe = async () => {
-        try {
-          const { data } = await fetchCurrentUser();
-          setCurrentUserId(data.id);
-        } catch {
-          // fail silently
-        }
-      };
-      getMe();
+    if (!token) {
+      return;
     }
-  }, [token, currentUserId]);
+
+    const getMe = async () => {
+      try {
+        const { data } = await fetchCurrentUser();
+        setCurrentUserRef(data.slug || String(data.id));
+      } catch {
+        // fail silently
+      }
+    };
+
+    getMe();
+  }, [token]);
 
   useEffect(() => {
     if (token) {
@@ -194,9 +197,9 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
                   <span>Create Task</span>
                 </Link>
                 <Link
-                  to={currentUserId ? `/profile/${currentUserId}` : "#"}
+                  to={currentUserRef ? `/profile/${currentUserRef}` : "#"}
                   className={
-                    !currentUserId
+                    !currentUserRef
                       ? "pointer-events-none flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm opacity-50 text-slate-600 dark:text-slate-300"
                       : desktopLinkClass
                   }
@@ -272,10 +275,10 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
                         Dashboard
                       </Link>
                       <Link
-                        to={currentUserId ? `/profile/${currentUserId}` : "#"}
+                        to={currentUserRef ? `/profile/${currentUserRef}` : "#"}
                         onClick={closeMobileMenu}
                         className={
-                          !currentUserId
+                          !currentUserRef
                             ? "pointer-events-none flex items-center gap-2 rounded-lg px-3 py-2 text-sm opacity-50 text-slate-500 dark:text-slate-400"
                             : `${mobileLinkClass} transition-all duration-200 active:scale-[0.98]`
                         }
@@ -435,13 +438,13 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
               </Link>
 
               <Link
-                to={currentUserId ? `/profile/${currentUserId}` : "#"}
+                to={currentUserRef ? `/profile/${currentUserRef}` : "#"}
                 onClick={closeMobileMenu}
                 className={`flex min-w-[56px] flex-col items-center gap-1 py-1 text-[10px] transition-all duration-200 active:scale-95 ${
                   isPathActive("/profile")
                     ? "text-primary-600 dark:text-primary-400"
                     : "text-slate-500 dark:text-slate-400"
-                } ${!currentUserId ? "pointer-events-none opacity-50" : ""}`}
+                } ${!currentUserRef ? "pointer-events-none opacity-50" : ""}`}
               >
                 <User className={`h-5 w-5 ${isPathActive("/profile") ? "stroke-[2.4]" : ""}`} />
                 <span className="font-medium">Profile</span>
