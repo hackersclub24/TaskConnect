@@ -167,7 +167,12 @@ class UserStatsOut(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
 
 
 class TokenData(BaseModel):
@@ -182,6 +187,7 @@ class GoogleAuthResponse(BaseModel):
     success: bool = True
     user: UserOut
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
 
 

@@ -2,7 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
-from ..auth import authenticate_user, create_user, create_user_token, get_current_user
+from ..auth import (
+    authenticate_user,
+    create_user,
+    create_user_tokens,
+    decode_user_refresh_token,
+    get_current_user,
+)
 from ..database import get_db
 
 
@@ -30,8 +36,36 @@ def login(user_in: schemas.UserLogin, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
         )
-    access_token = create_user_token(user.id)
-    return {"access_token": access_token, "token_type": "bearer"}
+    tokens = create_user_tokens(user.id)
+    return {
+        "access_token": tokens["access_token"],
+        "refresh_token": tokens["refresh_token"],
+        "token_type": "bearer",
+    }
+
+
+@router.post("/refresh", response_model=schemas.Token)
+def refresh_access_token(payload: schemas.RefreshTokenRequest, db: Session = Depends(get_db)):
+    token_data = decode_user_refresh_token(payload.refresh_token)
+    if token_data is None or token_data.user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+        )
+
+    user = db.query(models.User).filter(models.User.id == token_data.user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
+    tokens = create_user_tokens(user.id)
+    return {
+        "access_token": tokens["access_token"],
+        "refresh_token": tokens["refresh_token"],
+        "token_type": "bearer",
+    }
 
 
 @router.get("/me", response_model=schemas.UserOut)

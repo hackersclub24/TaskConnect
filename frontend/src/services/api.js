@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  // import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+  import.meta.env.VITE_API_BASE_URL || "https://taskconnect-pyxy.onrender.com/api";
+  // import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
 
 const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
@@ -12,14 +12,97 @@ const api = axios.create({
 
 const GOOGLE_AUTH_URL =
   import.meta.env.VITE_GOOGLE_AUTH_URL || `${API_ORIGIN}/api/auth/google`;
+
+const AUTH_FREE_PATHS = ["/auth/login", "/auth/register", "/auth/refresh"];
+
+const getAccessToken = () => localStorage.getItem("token");
+const getRefreshToken = () => localStorage.getItem("refreshToken");
+
+export const persistAuthTokens = (accessToken, refreshToken) => {
+  if (accessToken) {
+    localStorage.setItem("token", accessToken);
+  }
+  if (refreshToken) {
+    localStorage.setItem("refreshToken", refreshToken);
+  }
+};
+
+export const clearAuthTokens = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
+};
+
+const isAuthFreeRequest = (url = "") => {
+  if (url.includes("/auth/google")) {
+    return true;
+  }
+  return AUTH_FREE_PATHS.some((path) => url.includes(path));
+};
+
+let refreshTokenPromise = null;
+
+const refreshAccessToken = async () => {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    throw new Error("Missing refresh token");
+  }
+
+  const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+    refresh_token: refreshToken
+  });
+
+  persistAuthTokens(data.access_token, data.refresh_token);
+  return data.access_token;
+};
   
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error?.config;
+    const status = error?.response?.status;
+
+    if (!originalRequest || status !== 401) {
+      return Promise.reject(error);
+    }
+
+    const requestUrl = originalRequest.url || "";
+    if (isAuthFreeRequest(requestUrl) || originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      clearAuthTokens();
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+
+    try {
+      if (!refreshTokenPromise) {
+        refreshTokenPromise = refreshAccessToken().finally(() => {
+          refreshTokenPromise = null;
+        });
+      }
+
+      const nextAccessToken = await refreshTokenPromise;
+      originalRequest.headers = originalRequest.headers || {};
+      originalRequest.headers.Authorization = `Bearer ${nextAccessToken}`;
+      return api(originalRequest);
+    } catch (refreshError) {
+      clearAuthTokens();
+      return Promise.reject(refreshError);
+    }
+  }
+);
 
 export const registerUser = (data) => api.post("/auth/register", data);
 

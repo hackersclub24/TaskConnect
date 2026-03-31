@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from "../services/api";
+import { loginUser, persistAuthTokens } from "../services/api";
 import GoogleLoginButton from "../components/GoogleLoginButton";
 
 const Login = () => {
@@ -20,7 +20,7 @@ const Login = () => {
     setError("");
     try {
       const { data } = await loginUser(form);
-      localStorage.setItem("token", data.access_token);
+      persistAuthTokens(data.access_token, data.refresh_token);
       navigate("/");
     } catch (err) {
       setError(

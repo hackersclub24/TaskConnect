@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
-import { loginWithGoogleToken } from "../services/api";
+import { loginWithGoogleToken, persistAuthTokens } from "../services/api";
 
 const GoogleIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -52,7 +52,7 @@ const GoogleLoginButton = ({
       localStorage.setItem("googleUser", JSON.stringify(profile));
 
       if (data?.access_token) {
-        localStorage.setItem("token", data.access_token);
+        persistAuthTokens(data.access_token, data.refresh_token);
       }
 
       onSuccess?.({ profile, idToken, backendResponse: data });

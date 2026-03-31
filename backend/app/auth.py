@@ -5,7 +5,14 @@ from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorization
 from sqlalchemy.orm import Session
 
 from . import models
-from .core.security import verify_password, get_password_hash, create_access_token, decode_access_token
+from .core.security import (
+    verify_password,
+    get_password_hash,
+    create_access_token,
+    create_refresh_token,
+    decode_access_token,
+    decode_refresh_token,
+)
 from .database import get_db
 
 
@@ -52,6 +59,17 @@ def create_user(
 
 def create_user_token(user_id: int) -> str:
     return create_access_token({"sub": str(user_id)})
+
+
+def create_user_tokens(user_id: int) -> dict[str, str]:
+    return {
+        "access_token": create_access_token({"sub": str(user_id)}),
+        "refresh_token": create_refresh_token({"sub": str(user_id)}),
+    }
+
+
+def decode_user_refresh_token(token: str):
+    return decode_refresh_token(token)
 
 
 def get_current_user(

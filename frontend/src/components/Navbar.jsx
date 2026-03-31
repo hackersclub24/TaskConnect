@@ -18,7 +18,7 @@ import {
   ClipboardList
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { fetchCurrentUser, getTokenBalance } from "../services/api";
+import { clearAuthTokens, fetchCurrentUser, getTokenBalance } from "../services/api";
 import PremiumFeaturesModal from "./PremiumFeaturesModal";
 
 const Navbar = ({ theme = "dark", onToggleTheme }) => {
@@ -60,7 +60,7 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    clearAuthTokens();
     closeMobileMenu();
     navigate("/login");
   };

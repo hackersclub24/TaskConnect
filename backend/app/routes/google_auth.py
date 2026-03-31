@@ -7,7 +7,7 @@ from google.oauth2 import id_token
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
-from ..auth import create_user_token
+from ..auth import create_user_tokens
 from ..core.security import get_password_hash
 from ..database import get_db
 
@@ -59,11 +59,12 @@ def google_login(payload: schemas.GoogleTokenIn, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
 
-    access_token = create_user_token(user.id)
+    tokens = create_user_tokens(user.id)
 
     return {
         "success": True,
         "user": user,
-        "access_token": access_token,
+        "access_token": tokens["access_token"],
+        "refresh_token": tokens["refresh_token"],
         "token_type": "bearer",
     }
