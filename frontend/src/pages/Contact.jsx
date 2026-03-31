@@ -48,29 +48,29 @@ const Contact = () => {
   return (
     <div className="mx-auto max-w-2xl py-8">
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/20 text-primary-400">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400">
           <MessageCircle className="h-8 w-8" />
         </div>
-        <h1 className="text-2xl font-semibold text-slate-50">Contact & Feedback</h1>
-        <p className="mt-2 text-sm text-slate-400">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">Contact & Feedback</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
           Send feedback, report issues, or get in touch with the Skillstreet team.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/90 p-6 shadow-xl sm:p-8">
+      <div className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-xl shadow-slate-900/5 dark:border-slate-800/80 dark:bg-slate-900/90 dark:shadow-none sm:p-8">
         {error && (
-          <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          <div className="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
             {error}
           </div>
         )}
         {success && (
-          <div className="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          <div className="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">
             {success}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-300">
+            <label className="mb-2 block text-xs font-medium text-slate-600 dark:text-slate-300">
               Type
             </label>
             <div className="grid gap-2 sm:grid-cols-3">
@@ -84,8 +84,8 @@ const Contact = () => {
                     onClick={() => setForm((p) => ({ ...p, type: t.value }))}
                     className={`flex items-center justify-center gap-2 rounded-lg border p-3 transition-all ${
                       isSelected
-                        ? "border-primary-500 bg-primary-500/15 text-primary-300"
-                        : "border-slate-700 bg-slate-900/60 text-slate-400 hover:border-slate-600"
+                        ? "border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300"
+                        : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400 dark:hover:border-slate-600"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -96,7 +96,7 @@ const Contact = () => {
             </div>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-300">
+            <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
               Subject
             </label>
             <input
@@ -109,7 +109,7 @@ const Contact = () => {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-300">
+            <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
               Message
             </label>
             <textarea

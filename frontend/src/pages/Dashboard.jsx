@@ -104,9 +104,11 @@ const Dashboard = () => {
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recommended.slice(0, 6).map((rec) => (
-              <div key={rec.task.id} className="relative min-h-0">
-                <div className="absolute right-3 top-3 z-10 rounded-full bg-primary-600/20 px-2.5 py-1 text-xs font-semibold text-primary-300 ring-1 ring-primary-500/40">
-                  {rec.match_percentage}% match
+              <div key={rec.task.id} className="min-h-0">
+                <div className="mb-2 flex justify-end">
+                  <span className="inline-flex items-center rounded-full bg-primary-500/15 px-2.5 py-1 text-xs font-semibold text-primary-700 ring-1 ring-primary-500/40 dark:text-primary-300">
+                    {rec.match_percentage}% match
+                  </span>
                 </div>
                 <TaskCard
                   task={rec.task}
