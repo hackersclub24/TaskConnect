@@ -33,6 +33,7 @@ class UserOut(UserBase):
     college_name: Optional[str] = None
     premium_tokens: int = 0
     is_premium: bool = False
+    is_admin: bool = False
     profile_image_url: Optional[str] = None
 
     class Config:
@@ -304,6 +305,22 @@ class TaskApplicationOut(BaseModel):
     applicant_name: Optional[str] = None
     applicant_email: Optional[str] = None
     status: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class AdminTaskOut(BaseModel):
+    id: int
+    slug: str
+    title: str
+    status: TaskStatus
+    owner_id: int
+    owner_email: Optional[EmailStr] = None
+    assigned_to: Optional[int] = None
+    message_count: int = 0
+    attachment_count: int = 0
     created_at: datetime
 
     class Config:

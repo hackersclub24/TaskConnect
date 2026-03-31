@@ -15,7 +15,8 @@ import {
   Menu,
   X,
   ChevronDown,
-  ClipboardList
+  ClipboardList,
+  Shield
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { clearAuthTokens, fetchCurrentUser, getTokenBalance } from "../services/api";
@@ -52,6 +53,7 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
 
   const [tokenBalance, setTokenBalance] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const closeMobileMenu = () => {
@@ -74,6 +76,7 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
       try {
         const { data } = await fetchCurrentUser();
         setCurrentUserRef(data.slug || String(data.id));
+        setIsAdmin(Boolean(data.is_admin));
       } catch {
         // fail silently
       }
@@ -219,6 +222,12 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
                   <MessageCircle className="h-4 w-4" />
                   <span>Contact</span>
                 </Link>
+                {isAdmin && (
+                  <Link to="/admin/tasks" className={desktopLinkClass}>
+                    <Shield className="h-4 w-4" />
+                    <span>Admin</span>
+                  </Link>
+                )}
                 <button onClick={handleLogout} className={desktopLinkClass}>
                   <LogOut className="h-4 w-4" />
                   <span>Logout</span>
@@ -320,6 +329,12 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
                           <MessageCircle className="h-4 w-4" />
                           Contact
                         </Link>
+                        {isAdmin && (
+                          <Link to="/admin/tasks" onClick={closeMobileMenu} className={`${mobileLinkClass} transition-all duration-200 active:scale-[0.98]`}>
+                            <Shield className="h-4 w-4" />
+                            Admin
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>

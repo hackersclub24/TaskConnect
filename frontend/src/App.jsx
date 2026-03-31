@@ -10,6 +10,7 @@ import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import PlatformReviews from "./pages/PlatformReviews";
 import Leaderboard from "./pages/Leaderboard";
+import AdminTasks from "./pages/AdminTasks";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -74,6 +75,14 @@ const App = () => {
             element={
               <PrivateRoute>
                 <TaskDetails />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/tasks"
+            element={
+              <PrivateRoute>
+                <AdminTasks />
               </PrivateRoute>
             }
           />

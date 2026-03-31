@@ -15,6 +15,7 @@ from .routes import chat as chat_routes
 from .routes import platform_reviews as platform_reviews_routes
 from .routes import leaderboard as leaderboard_routes
 from .routes import premium as premium_routes
+from .routes import admin as admin_routes
 
 
 def ensure_compatibility_columns() -> None:
@@ -66,6 +67,7 @@ app.include_router(chat_routes.router, prefix="/api/chat", tags=["chat"])
 app.include_router(platform_reviews_routes.router, prefix="/api/platform-reviews", tags=["platform-reviews"])
 app.include_router(leaderboard_routes.router, prefix="/api/leaderboard", tags=["leaderboard"])
 app.include_router(premium_routes.router, prefix="/api/premium", tags=["premium"])
+app.include_router(admin_routes.router, prefix="/api/admin", tags=["admin"])
 
 # Serve uploaded files (local storage fallback)
 uploads_dir = Path(__file__).parent / "uploads"

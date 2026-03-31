@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 
 from sqlalchemy import (
     Column,
@@ -90,6 +91,24 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    @property
+    def is_admin(self) -> bool:
+        """Computed admin access based on configured email allowlist."""
+        email = (self.email or "").strip().lower()
+        if not email:
+            return False
+
+        admin_emails = {
+            e.strip().lower()
+            for e in os.getenv("ADMIN_EMAILS", "").split(",")
+            if e.strip()
+        }
+        single_admin = (os.getenv("ADMIN_EMAIL", "").strip().lower())
+        if single_admin:
+            admin_emails.add(single_admin)
+
+        return email in admin_emails
 
 
 class RefreshToken(Base):

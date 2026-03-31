@@ -252,5 +252,9 @@ export const checkPremiumAccess = (feature) => api.get(`/premium/check/${feature
 export const updateProfileImage = (imageUrl) =>
   api.patch("/users/me", { profile_image_url: imageUrl });
 
+// Admin
+export const fetchAdminTasks = (params = {}) => api.get("/admin/tasks", { params });
+export const adminDeleteTask = (taskRef) => api.delete(`/admin/tasks/${taskRef}`);
+
 export default api;
 
