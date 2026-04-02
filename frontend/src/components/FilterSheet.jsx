@@ -9,6 +9,8 @@ const CATEGORY_TABS = [
 ];
 
 const STATUS_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "urgent", label: "Urgent" },
   { value: "open", label: "Open" },
   { value: "accepted", label: "Accepted" },
   { value: "completed", label: "Completed" }
