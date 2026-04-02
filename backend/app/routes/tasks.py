@@ -683,11 +683,16 @@ def reject_task_application(
     if not application:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
 
-    if application.status == models.TaskApplicationStatus.approved:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Accepted assignee cannot be rejected",
-        )
+    # If an already-approved assignee is rejected, unassign and reopen the task.
+    if (
+        task.status == models.TaskStatus.accepted
+        and application.status == models.TaskApplicationStatus.approved
+        and task.assigned_to == application.applicant_id
+    ):
+        # Delete chat history and attachments between owner and assignee on rejection.
+        delete_task_chat_history(db, task_id)
+        task.status = models.TaskStatus.open
+        task.assigned_to = None
 
     application.status = models.TaskApplicationStatus.rejected
     db.commit()
@@ -701,10 +706,45 @@ def cancel_task_acceptance(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    raise HTTPException(
-        status_code=status.HTTP_410_GONE,
-        detail="Cancel acceptance is no longer supported",
-    )
+    task = _get_task_by_ref(db, task_ref)
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+    task_id = task.id
+    if task.status != models.TaskStatus.accepted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Task is not currently accepted",
+        )
+    if task.owner_id != current_user.id and task.assigned_to != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to cancel this task's acceptance",
+        )
+    
+    # Delete chat history and PDFs when acceptance is cancelled
+    delete_task_chat_history(db, task_id)
+    
+    previous_assignee_id = task.assigned_to
+
+    task.status = models.TaskStatus.open
+    task.assigned_to = None
+
+    if previous_assignee_id:
+        approved_application = (
+            db.query(models.TaskApplication)
+            .filter(
+                models.TaskApplication.task_id == task_id,
+                models.TaskApplication.applicant_id == previous_assignee_id,
+                models.TaskApplication.status == models.TaskApplicationStatus.approved,
+            )
+            .first()
+        )
+        if approved_application:
+            approved_application.status = models.TaskApplicationStatus.rejected
+
+    db.commit()
+    db.refresh(task)
+    return task
 
 
 @router.delete("/{task_ref}", status_code=status.HTTP_204_NO_CONTENT)

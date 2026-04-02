@@ -15,6 +15,7 @@ import {
 import {
   applyForTask,
   approveTaskApplication,
+  cancelTaskAcceptance,
   createReview,
   deleteTask,
   fetchCurrentUser,
@@ -233,6 +234,27 @@ const TaskDetails = () => {
       setError(err.response?.data?.detail || "Could not reject this application right now.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancelAcceptance = async () => {
+    const confirmed = window.confirm("Are you sure you want to cancel the acceptance of this task?");
+    if (!confirmed) return;
+    setSaving(true);
+    setAccepting(true);
+    setError("");
+    try {
+      const { data } = await cancelTaskAcceptance(taskRef);
+      setTask(data);
+      await refreshApplications();
+      if (isOwner) {
+         setContacts(prev => ({ ...prev, acceptor_phone: null }));
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || "Could not cancel task acceptance right now.");
+    } finally {
+      setSaving(false);
+      setAccepting(false);
     }
   };
 
@@ -514,7 +536,15 @@ const TaskDetails = () => {
         <div className="flex flex-wrap gap-3">
           {!isOwner && (
             <>
-              {myApplication?.status === "pending" ? (
+              {task.status === "accepted" && isAcceptor ? (
+                <button
+                  onClick={handleCancelAcceptance}
+                  disabled={saving || accepting}
+                  className="rounded-lg border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-100 disabled:opacity-50 dark:border-red-500/60 dark:bg-red-500/10 dark:text-red-200 dark:shadow-md dark:hover:bg-red-500/20"
+                >
+                  {accepting ? "Canceling..." : "Cancel my acceptance"}
+                </button>
+              ) : myApplication?.status === "pending" ? (
                 <button
                   onClick={handleWithdrawApplication}
                   disabled={accepting}
@@ -580,6 +610,15 @@ const TaskDetails = () => {
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>
+              {task.status === "accepted" && task.assigned_to && (
+                <button
+                  onClick={handleCancelAcceptance}
+                  disabled={saving || accepting}
+                  className="rounded-lg border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-100 disabled:opacity-50 dark:border-red-500/60 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                >
+                  {saving ? "Canceling..." : "Revoke assignment"}
+                </button>
+              )}
               <div className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80">
                 <p className="mb-1 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                   Accepted freelancer contact
@@ -631,6 +670,17 @@ const TaskDetails = () => {
                                 className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
                               >
                                 Reject
+                              </button>
+                            </div>
+                          )}
+                          {task.status === "accepted" && app.status === "approved" && task.assigned_to === app.applicant_id && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => openRejectConfirmation(app)}
+                                disabled={saving}
+                                className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-500/50 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                              >
+                                Reject accepted user
                               </button>
                             </div>
                           )}

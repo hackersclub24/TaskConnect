@@ -160,6 +160,8 @@ export const rejectTaskApplication = (taskId, applicationId) =>
 export const withdrawTaskApplication = (taskId, applicationId) =>
   api.delete(`/tasks/${taskId}/applications/${applicationId}`);
 
+export const cancelTaskAcceptance = (id) => api.post(`/tasks/${id}/cancel-acceptance`);
+
 export const updateTask = (id, data) => api.patch(`/tasks/${id}`, data);
 
 export const updateTaskStatus = (id, status) =>
