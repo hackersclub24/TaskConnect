@@ -442,6 +442,42 @@ def update_task_status(
     return task
 
 
+@router.patch("/{task_ref}/negotiate-reward", response_model=schemas.TaskOut)
+def negotiate_task_reward(
+    task_ref: str,
+    reward_in: schemas.TaskRewardNegotiationIn,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    task = _get_task_by_ref(db, task_ref)
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    if task.status != models.TaskStatus.accepted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reward can be negotiated only after a task doer is accepted",
+        )
+
+    is_owner_or_assignee = current_user.id in {task.owner_id, task.assigned_to}
+    if not is_owner_or_assignee:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the task owner or accepted doer can negotiate reward",
+        )
+
+    if reward_in.reward < 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reward cannot be negative",
+        )
+
+    task.reward = reward_in.reward
+    db.commit()
+    db.refresh(task)
+    return task
+
+
 @router.post("/{task_ref}/apply", response_model=schemas.TaskApplicationOut)
 def apply_for_task(
     task_ref: str,

@@ -167,6 +167,9 @@ export const updateTask = (id, data) => api.patch(`/tasks/${id}`, data);
 export const updateTaskStatus = (id, status) =>
   api.patch(`/tasks/${id}/status`, { status });
 
+export const negotiateTaskReward = (id, reward) =>
+  api.patch(`/tasks/${id}/negotiate-reward`, { reward });
+
 export const deleteTask = (id) => api.delete(`/tasks/${id}`);
 
 export const fetchTaskContacts = (id) => api.get(`/tasks/${id}/contacts`);

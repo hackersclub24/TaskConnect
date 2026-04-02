@@ -79,6 +79,10 @@ class TaskUpdateStatus(BaseModel):
     status: TaskStatus
 
 
+class TaskRewardNegotiationIn(BaseModel):
+    reward: float
+
+
 class TaskOwnerBrief(BaseModel):
     """Brief owner info for task cards (includes college for 'From Your College' badge)."""
     id: int

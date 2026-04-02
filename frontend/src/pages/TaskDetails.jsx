@@ -24,6 +24,7 @@ import {
   fetchTaskContacts,
   fetchRecommendedFreelancers,
   generateProposal,
+  negotiateTaskReward,
   rejectTaskApplication,
   withdrawTaskApplication,
   updateTask,
@@ -72,6 +73,8 @@ const TaskDetails = () => {
   const [applications, setApplications] = useState([]);
   const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [negotiatedReward, setNegotiatedReward] = useState("");
+  const [negotiatingReward, setNegotiatingReward] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -98,6 +101,7 @@ const TaskDetails = () => {
         setContacts(contactsData);
         setRecommendedFreelancers(recData || []);
         setApplications(applicationData || []);
+        setNegotiatedReward(taskData.reward != null ? String(taskData.reward) : "");
         setEditForm({
           title: taskData.title,
           description: taskData.description,
@@ -300,6 +304,28 @@ const TaskDetails = () => {
     }
   };
 
+  const handleNegotiateReward = async () => {
+    if (!task) return;
+
+    const parsedReward = Number(negotiatedReward);
+    if (negotiatedReward === "" || Number.isNaN(parsedReward) || parsedReward < 0) {
+      setError("Enter a valid non-negative reward amount.");
+      return;
+    }
+
+    setNegotiatingReward(true);
+    setError("");
+    try {
+      const { data } = await negotiateTaskReward(taskRef, parsedReward);
+      setTask(data);
+      setNegotiatedReward(data.reward != null ? String(data.reward) : "");
+    } catch (err) {
+      setError(err.response?.data?.detail || "Could not update negotiated reward right now.");
+    } finally {
+      setNegotiatingReward(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!task) return;
     const confirmed = window.confirm("Are you sure you want to delete this task? This cannot be undone.");
@@ -474,6 +500,36 @@ const TaskDetails = () => {
         {error && (
           <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
             {error}
+          </div>
+        )}
+
+        {task.status === "accepted" && (isOwner || isAcceptor) && (
+          <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/80">
+            <p className="mb-2 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+              Negotiated reward
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={negotiatedReward}
+                onChange={(e) => setNegotiatedReward(e.target.value)}
+                className="w-full rounded-lg bg-white border border-slate-300 text-slate-900 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 sm:max-w-xs dark:bg-slate-950/50 dark:border-slate-800/80 dark:text-slate-200"
+                placeholder="Enter final reward"
+              />
+              <button
+                type="button"
+                onClick={handleNegotiateReward}
+                disabled={negotiatingReward || saving}
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-500 disabled:opacity-50"
+              >
+                {negotiatingReward ? "Updating..." : "Update reward"}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              This amount can be adjusted only after a task doer is accepted.
+            </p>
           </div>
         )}
 
