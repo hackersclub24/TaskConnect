@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { PlusCircle, Filter, GraduationCap, Sparkles } from "lucide-react";
 import { fetchCurrentUser, fetchRecommendedTasks, fetchTasks, fetchUrgentTasks } from "../services/api";
 import TaskCard from "../components/TaskCard";
+import FilterSheet, { FilterButton } from "../components/FilterSheet";
 
 const CATEGORY_TABS = [
   { value: "", label: "All" },
@@ -11,18 +12,27 @@ const CATEGORY_TABS = [
   { value: "collaboration", label: "Collaboration" }
 ];
 
+const STATUS_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "urgent", label: "Urgent" },
+  { value: "open", label: "Open" },
+  { value: "accepted", label: "Accepted" },
+  { value: "completed", label: "Completed" }
+];
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [urgentTasks, setUrgentTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("open");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sameCollegeOnly, setSameCollegeOnly] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [recommended, setRecommended] = useState([]);
   const [recLoading, setRecLoading] = useState(true);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -90,6 +100,113 @@ const Dashboard = () => {
         </button>
       </div>
 
+      {/* Filters - Responsive: mobile button vs desktop inline */}
+      <div className="mb-6 space-y-3 border-y border-slate-200/70 py-3 dark:border-slate-800/80">
+        {/* Mobile Filter Button (hidden on md+) */}
+        <div className="md:hidden flex items-center gap-3">
+          <Filter className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+          <FilterButton 
+            onClick={() => setFilterSheetOpen(true)} 
+            taskCount={filteredTasks.length}
+          />
+        </div>
+
+        {/* Desktop Inline Filters (hidden on sm) */}
+        <div className="hidden md:block space-y-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Filter className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => {
+                  setStatusFilter("all");
+                  setCategoryFilter("");
+                }}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  statusFilter === "all" && !categoryFilter
+                    ? "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-50"
+                    : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setStatusFilter("urgent")}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  statusFilter === "urgent"
+                    ? "bg-red-100 text-red-800 ring-1 ring-red-500/50 dark:bg-red-500/90 dark:text-white"
+                    : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                Urgent
+              </button>
+              <button
+                onClick={() => setCategoryFilter("paid")}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  categoryFilter === "paid"
+                    ? "bg-primary-600 text-white"
+                    : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                Paid
+              </button>
+              <button
+                onClick={() => setStatusFilter("open")}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  statusFilter === "open"
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-600/90 dark:text-white"
+                    : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                Open
+              </button>
+            </div>
+            <label className="ml-0 flex items-center gap-2 text-xs font-medium text-slate-500 sm:ml-auto dark:text-slate-400">
+              <span>Category:</span>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="h-10 w-40 rounded-full border border-slate-200 bg-white px-4 pr-8 text-sm font-medium leading-none text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none sm:w-44 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                {CATEGORY_TABS.map((tab) => (
+                  <option key={tab.value} value={tab.value}>
+                    {tab.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {currentUser?.college_name && (
+              <label className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/60 dark:hover:bg-slate-800">
+                <input
+                  type="checkbox"
+                  checked={sameCollegeOnly}
+                  onChange={(e) => setSameCollegeOnly(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded"
+                />
+                <GraduationCap className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                <span className="font-medium text-slate-700 dark:text-slate-300">From my college only</span>
+              </label>
+            )}
+          </div>
+          {!loading && !error && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Showing <span className="font-semibold text-slate-900 dark:text-slate-200">{filteredTasks.length}</span> tasks
+            </p>
+          )}
+        </div>
+
+        {/* Mobile - Show task count info */}
+        <div className="md:hidden">
+          {!loading && !error && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Showing <span className="font-semibold text-slate-900 dark:text-slate-200">{filteredTasks.length}</span> tasks
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Recommended section - separate card grid to prevent overlap */}
       {!recLoading && recommended.length > 0 && (
         <section className="mb-10 rounded-2xl border border-slate-200 bg-white/60 p-5 shadow-lg backdrop-blur-sm sm:p-6 dark:border-slate-800/80 dark:bg-slate-900/60">
@@ -120,69 +237,6 @@ const Dashboard = () => {
           </div>
         </section>
       )}
-
-      {/* Filters */}
-      <div className="mb-6 space-y-4">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <Filter className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Category:</span>
-          {CATEGORY_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setCategoryFilter(tab.value)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
-                categoryFilter === tab.value
-                  ? "bg-primary-600 text-white shadow-md shadow-primary-900/20"
-                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-transparent dark:bg-slate-900/60 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {currentUser?.college_name && (
-            <label className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/60 dark:hover:bg-slate-800">
-              <input
-                type="checkbox"
-                checked={sameCollegeOnly}
-                onChange={(e) => setSameCollegeOnly(e.target.checked)}
-                className="h-3.5 w-3.5 rounded"
-              />
-              <GraduationCap className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-              <span className="font-medium text-slate-700 dark:text-slate-300">From my college only</span>
-            </label>
-          )}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-            {["all", "urgent", "open", "accepted", "completed"].map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                  statusFilter === s
-                    ? s === "urgent"
-                      ? "bg-red-100 text-red-800 dark:bg-red-500/90 dark:text-white ring-1 ring-red-500/50 shadow-sm"
-                    : s === "open"
-                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-600/90 dark:text-white"
-                      : s === "accepted"
-                      ? "bg-amber-100 text-amber-800 dark:bg-amber-500/90 dark:text-slate-950"
-                      : s === "completed"
-                      ? "bg-sky-100 text-sky-800 dark:bg-sky-500/90 dark:text-slate-950"
-                      : "bg-slate-800 text-white dark:bg-slate-700 dark:text-slate-50"
-                    : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-transparent dark:bg-slate-900/60 dark:text-slate-400 dark:hover:bg-slate-800"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-        {!loading && !error && (
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Showing <span className="font-semibold text-slate-900 dark:text-slate-200">{filteredTasks.length}</span> tasks
-          </p>
-        )}
-      </div>
 
       {/* Open Tasks / All Tasks section */}
       <section className="mt-2">
@@ -221,6 +275,20 @@ const Dashboard = () => {
           </div>
         )}
       </section>
+
+      {/* Filter Sheet Modal */}
+      <FilterSheet
+        isOpen={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        sameCollegeOnly={sameCollegeOnly}
+        setSameCollegeOnly={setSameCollegeOnly}
+        currentUser={currentUser}
+        taskCount={filteredTasks.length}
+      />
     </div>
   );
 };

@@ -54,7 +54,9 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
   const [tokenBalance, setTokenBalance] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
@@ -62,8 +64,13 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
   };
 
   const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
     clearAuthTokens();
     closeMobileMenu();
+    setShowLogoutModal(false);
     navigate("/login");
   };
 
@@ -77,6 +84,7 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
         const { data } = await fetchCurrentUser();
         setCurrentUserRef(data.slug || String(data.id));
         setIsAdmin(Boolean(data.is_admin));
+        setProfileImageUrl(data.profile_image_url || null);
       } catch {
         // fail silently
       }
@@ -128,6 +136,16 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
     }
   };
 
+  const resolvedProfileImageUrl = (() => {
+    if (!profileImageUrl) return null;
+    if (profileImageUrl.startsWith("http://") || profileImageUrl.startsWith("https://")) {
+      return profileImageUrl;
+    }
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+    const origin = apiBase.replace(/\/api\/?$/, "");
+    return `${origin}${profileImageUrl.startsWith("/") ? profileImageUrl : `/${profileImageUrl}`}`;
+  })();
+
   return (
     <>
       <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 transition-colors duration-300 dark:border-slate-800/80 dark:bg-slate-950/95 dark:supports-[backdrop-filter]:bg-slate-950/80">
@@ -174,6 +192,30 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
                 </button>
               )}
 
+              {token && (
+                <Link
+                  to={currentUserRef ? `/profile/${currentUserRef}` : "#"}
+                  onClick={closeMobileMenu}
+                  className={`hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1 pr-3 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 md:inline-flex ${
+                    !currentUserRef ? "pointer-events-none opacity-50" : ""
+                  }`}
+                >
+                  {resolvedProfileImageUrl ? (
+                    <img
+                      src={resolvedProfileImageUrl}
+                      alt="Profile"
+                      className="h-7 w-7 rounded-full object-cover ring-1 ring-slate-200 dark:ring-slate-700"
+                      onError={() => setProfileImageUrl(null)}
+                    />
+                  ) : (
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <User className="h-4 w-4" />
+                    </span>
+                  )}
+                  <span className="hidden lg:inline">My Profile</span>
+                </Link>
+              )}
+
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen((prev) => !prev)}
@@ -198,17 +240,6 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
                 >
                   <PlusCircle className="h-4 w-4" />
                   <span>Create Task</span>
-                </Link>
-                <Link
-                  to={currentUserRef ? `/profile/${currentUserRef}` : "#"}
-                  className={
-                    !currentUserRef
-                      ? "pointer-events-none flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm opacity-50 text-slate-600 dark:text-slate-300"
-                      : desktopLinkClass
-                  }
-                >
-                  <User className="h-4 w-4" />
-                  <span>My Profile</span>
                 </Link>
                 <Link to="/leaderboard" className={desktopLinkClass}>
                   <Trophy className="h-4 w-4 text-yellow-500" />
@@ -475,6 +506,34 @@ const Navbar = ({ theme = "dark", onToggleTheme }) => {
         tokenBalance={tokenBalance}
         isPremium={isPremium}
       />
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-50">
+              Confirm Logout
+            </h2>
+            <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
+              Are you sure you want to log out? You'll need to log in again to access your account.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
