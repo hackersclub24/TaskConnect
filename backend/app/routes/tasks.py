@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
@@ -15,6 +16,21 @@ from ..services.chat import delete_task_chat_history
 
 
 router = APIRouter()
+
+
+def _task_feed_priority(task: models.Task, current_user: Optional[models.User]) -> int:
+    """Sort feed so user's accepted tasks come first, then open tasks."""
+    if (
+        current_user
+        and task.status == models.TaskStatus.accepted
+        and task.assigned_to == current_user.id
+    ):
+        return 0
+    if task.status == models.TaskStatus.open:
+        return 1
+    if task.status == models.TaskStatus.accepted:
+        return 2
+    return 3
 
 
 def _slugify(value: str) -> str:
@@ -110,6 +126,13 @@ def list_tasks(
     # Filter: same_college_only - show only tasks from my college
     if same_college_only and current_user and current_user.college_name:
         tasks = [t for t in tasks if t.owner and t.owner.college_name == current_user.college_name]
+
+    tasks.sort(
+        key=lambda t: (
+            _task_feed_priority(t, current_user),
+            -(t.created_at.timestamp() if t.created_at else 0.0),
+        )
+    )
     return tasks
 
 
@@ -121,7 +144,12 @@ def list_my_tasks(
     tasks = (
         db.query(models.Task)
         .options(joinedload(models.Task.owner))
-        .filter(models.Task.owner_id == current_user.id)
+        .filter(
+            or_(
+                models.Task.owner_id == current_user.id,
+                models.Task.assigned_to == current_user.id,
+            )
+        )
         .order_by(models.Task.created_at.desc())
         .all()
     )

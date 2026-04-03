@@ -1,16 +1,8 @@
 import { useState } from "react";
 import { X, Settings } from "lucide-react";
 
-const CATEGORY_TABS = [
-  { value: "", label: "All Categories" },
-  { value: "paid", label: "Paid Tasks" },
-  { value: "learning", label: "Learning Help" },
-  { value: "collaboration", label: "Collaboration" }
-];
-
 const STATUS_OPTIONS = [
   { value: "all", label: "All" },
-  { value: "urgent", label: "Urgent" },
   { value: "open", label: "Open" },
   { value: "accepted", label: "Accepted" },
   { value: "completed", label: "Completed" }
@@ -36,8 +28,8 @@ export const FilterButton = ({ onClick, taskCount }) => {
 const FilterSheet = ({
   isOpen,
   onClose,
-  categoryFilter,
-  setCategoryFilter,
+  myTasksOnly,
+  setMyTasksOnly,
   statusFilter,
   setStatusFilter,
   sameCollegeOnly,
@@ -45,22 +37,22 @@ const FilterSheet = ({
   currentUser,
   taskCount
 }) => {
-  const [tempCategory, setTempCategory] = useState(categoryFilter);
+  const [tempMyTasksOnly, setTempMyTasksOnly] = useState(myTasksOnly);
   const [tempStatus, setTempStatus] = useState(statusFilter);
   const [tempCollege, setTempCollege] = useState(sameCollegeOnly);
 
   const handleApply = () => {
-    setCategoryFilter(tempCategory);
+    setMyTasksOnly(tempMyTasksOnly);
     setStatusFilter(tempStatus);
     setSameCollegeOnly(tempCollege);
     onClose();
   };
 
   const handleReset = () => {
-    setTempCategory("");
+    setTempMyTasksOnly(false);
     setTempStatus("open");
     setTempCollege(false);
-    setCategoryFilter("");
+    setMyTasksOnly(false);
     setStatusFilter("open");
     setSameCollegeOnly(false);
     onClose();
@@ -100,25 +92,40 @@ const FilterSheet = ({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-          {/* Category Section */}
+          {/* Task Scope */}
           <div>
             <label className="mb-3 block text-sm font-semibold text-slate-900 dark:text-slate-200">
-              Category
+              Task Scope
             </label>
-            <div className="space-y-2">
-              {CATEGORY_TABS.map((category) => (
-                <button
-                  key={category.value}
-                  onClick={() => setTempCategory(category.value)}
-                  className={`w-full rounded-xl px-4 py-3 text-left text-sm font-medium transition-all ${
-                    tempCategory === category.value
-                      ? "bg-primary-600 text-white shadow-lg shadow-primary-600/30"
-                      : "bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  {category.label}
-                </button>
-              ))}
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                onClick={() => {
+                  setTempMyTasksOnly((prev) => {
+                    const next = !prev;
+                    if (next) {
+                      setTempStatus("all");
+                    }
+                    return next;
+                  });
+                }}
+                className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all ${
+                  tempMyTasksOnly
+                    ? "border-primary-500 bg-primary-50 text-primary-700 shadow-sm shadow-primary-500/10 dark:border-primary-500/50 dark:bg-primary-500/10 dark:text-primary-200"
+                    : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+                }`}
+              >
+                My Tasks Only
+              </button>
+              <button
+                onClick={() => setTempMyTasksOnly(false)}
+                className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all ${
+                  !tempMyTasksOnly
+                    ? "border-primary-500 bg-primary-50 text-primary-700 shadow-sm shadow-primary-500/10 dark:border-primary-500/50 dark:bg-primary-500/10 dark:text-primary-200"
+                    : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+                }`}
+              >
+                All Tasks
+              </button>
             </div>
           </div>
 
@@ -127,15 +134,15 @@ const FilterSheet = ({
             <label className="mb-3 block text-sm font-semibold text-slate-900 dark:text-slate-200">
               Task Status
             </label>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               {STATUS_OPTIONS.map((status) => (
                 <button
                   key={status.value}
                   onClick={() => setTempStatus(status.value)}
-                  className={`w-full rounded-xl px-4 py-3 text-left text-sm font-medium transition-all ${
+                  className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all ${
                     tempStatus === status.value
-                      ? "bg-primary-600 text-white shadow-lg shadow-primary-600/30"
-                      : "bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                      ? "border-primary-500 bg-primary-50 text-primary-700 shadow-sm shadow-primary-500/10 dark:border-primary-500/50 dark:bg-primary-500/10 dark:text-primary-200"
+                      : "border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800"
                   }`}
                 >
                   {status.label}
@@ -147,7 +154,7 @@ const FilterSheet = ({
           {/* College Filter */}
           {currentUser?.college_name && (
             <div>
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 transition-all dark:border-slate-700 dark:bg-slate-800/50">
+              <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 transition-all hover:border-slate-300 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700 dark:hover:bg-slate-800">
                 <input
                   type="checkbox"
                   checked={tempCollege}
@@ -163,7 +170,7 @@ const FilterSheet = ({
 
           {/* Task Count Info */}
           {taskCount > 0 && (
-            <div className="rounded-lg bg-primary-50 p-3 dark:bg-primary-900/20">
+            <div className="rounded-2xl bg-primary-50 p-3 dark:bg-primary-900/20">
               <p className="text-xs text-primary-700 dark:text-primary-300">
                 {taskCount} task{taskCount !== 1 ? "s" : ""} match your current filters
               </p>
@@ -175,7 +182,7 @@ const FilterSheet = ({
         <div className="border-t border-slate-200 bg-slate-50/50 px-6 py-4 dark:border-slate-800/80 dark:bg-slate-900/50 space-y-3">
           <button
             onClick={handleApply}
-            className="w-full rounded-xl bg-primary-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-primary-600/30 transition-all hover:bg-primary-700 hover:-translate-y-0.5 hover:shadow-primary-600/40 active:translate-y-0 dark:hover:bg-primary-500"
+            className="w-full rounded-2xl bg-primary-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition-all hover:bg-primary-700 hover:shadow-primary-600/30 active:translate-y-0 dark:hover:bg-primary-500"
           >
             Apply Filters
           </button>

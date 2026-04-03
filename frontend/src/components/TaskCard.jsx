@@ -31,12 +31,28 @@ const TaskCard = ({ task, currentUserCollege, showCollegeBadge }) => {
   const category = categoryConfig[task.category || "paid"] || categoryConfig.paid;
   const CategoryIcon = category.icon;
   const taskRef = task.slug || task.id;
+  const isAccepted = task.status === "accepted";
 
   return (
     <Link
       to={`/tasks/${taskRef}`}
-      className="group flex min-h-0 flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary-500/30 hover:shadow-xl hover:shadow-primary-900/5 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-primary-500/40 dark:hover:bg-slate-900/90 dark:hover:shadow-primary-900/10"
+      className={`group relative flex min-h-0 flex-col gap-3 rounded-xl border bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary-500/30 hover:shadow-xl hover:shadow-primary-900/5 dark:bg-slate-900/70 dark:hover:border-primary-500/40 dark:hover:bg-slate-900/90 dark:hover:shadow-primary-900/10 ${
+        isAccepted
+          ? "border-amber-300/80 ring-1 ring-amber-400/15 dark:border-amber-500/40"
+          : "border-slate-200 dark:border-slate-800/80"
+      }`}
     >
+      {isAccepted && (
+        <span className="absolute left-0 top-0 h-full w-0.5 rounded-l-xl bg-amber-400/70" />
+      )}
+
+      {isAccepted && (
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800 shadow-sm shadow-amber-500/10 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-200">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+          In progress
+        </span>
+      )}
+
       {/* Top row: title, status, badges - prevent overlap with flex-wrap */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="min-w-0 flex-1 line-clamp-2 text-base font-semibold font-heading leading-snug text-slate-900 group-hover:text-primary-600 dark:text-slate-50 dark:group-hover:text-primary-300 sm:text-[15px]">
@@ -54,31 +70,31 @@ const TaskCard = ({ task, currentUserCollege, showCollegeBadge }) => {
       {/* Category and college badges */}
       <div className="flex flex-wrap gap-2">
         <span
-          className={`inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${category.color}`}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${category.color}`}
         >
           <CategoryIcon className="h-3.5 w-3.5 shrink-0" />
           {category.label}
         </span>
         {task.inter_college_only && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
             <Building2 className="h-3.5 w-3.5 shrink-0" />
             Inter-College
           </span>
         )}
         {isFromMyCollege && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-primary-200 bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 dark:border-primary-500/40 dark:bg-primary-500/10 dark:text-primary-300">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:border-primary-500/40 dark:bg-primary-500/10 dark:text-primary-300">
             <Building2 className="h-3.5 w-3.5 shrink-0" />
             From Your College
           </span>
         )}
         {(task.is_urgent || task.urgency_status) && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 shadow-sm shadow-red-500/10 dark:border-red-500/40 dark:bg-red-500/15 dark:text-red-400">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 shadow-sm shadow-red-500/10 dark:border-red-500/40 dark:bg-red-500/15 dark:text-red-400">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             URGENT
           </span>
         )}
         {task.premium_early_access && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700 shadow-sm shadow-yellow-500/10 dark:border-yellow-500/40 dark:bg-yellow-500/15 dark:text-yellow-300">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-yellow-200 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700 shadow-sm shadow-yellow-500/10 dark:border-yellow-500/40 dark:bg-yellow-500/15 dark:text-yellow-300">
             <Crown className="h-3.5 w-3.5 shrink-0" />
             PREMIUM ACCESS
           </span>
