@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /register
+Disallow: /admin/tasks
+Disallow: /create-task
+Disallow: /tasks/
+Disallow: /profile/
+
+Sitemap: /sitemap.xml
